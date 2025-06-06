@@ -1,3 +1,8 @@
 [bindings.swift]
 module_name = "loro"
 experimental_sendable_value_types = true
+
+[bindings.csharp]
+namespace = "Loro"
+cdylib_name = "loro"
+access_modifier = "public"
