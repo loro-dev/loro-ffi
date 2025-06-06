@@ -12,11 +12,11 @@ Loro FFI provides cross-language bindings for the Loro CRDT library, enabling de
 
 ## Supported Languages
 
-- [loro-swift](https://github.com/loro-dev/loro-swift): Swift Binding for Loro
-- [loro-react-native](https://github.com/loro-dev/loro-react-native): React Native Turbo Module Binding for Loro
-- [loro-py](https://github.com/loro-dev/loro-py): Python Binding (pyo3) for Loro
-- [loro-cs](https://github.com/sensslen/loro-cs)(community): C# Binding for Loro
-- [loro-go](https://github.com/aholstenson/loro-go)(community): Go Binding for Loro
+- [loro-swift](https://github.com/loro-dev/loro-swift): **Swift** Binding for Loro
+- [loro-py](https://github.com/loro-dev/loro-py): **Python** Binding (pyo3) for Loro
+- [loro-react-native](https://github.com/loro-dev/loro-react-native): **React Native** Turbo Module Binding for Loro
+- [loro-cs](https://github.com/sensslen/loro-cs): **C#** Binding for Loro (community)
+- [loro-go](https://github.com/aholstenson/loro-go): **Go** Binding for Loro (community)
 
 ## Community
 
