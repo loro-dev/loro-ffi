@@ -18,6 +18,66 @@ Loro FFI provides cross-language bindings for the Loro CRDT library, enabling de
 - [loro-cs](https://github.com/sensslen/loro-cs): **C#** Binding for Loro (community)
 - [loro-go](https://github.com/aholstenson/loro-go): **Go** Binding for Loro (community)
 
+## Build Binding
+
+Read the UniFFI [documentation](https://mozilla.github.io/uniffi-rs/) and modify the [uniffi.toml](./uniffi.toml) configuration in this repository as needed.
+
+Add this repository as a git submodule for your bindings:
+
+```bash
+git submodule add https://github.com/loro-dev/loro-ffi.git loro-ffi
+git add .gitmodules loro-ffi
+```
+
+Build language-specific wrapper layers around the current UniFFI binding results to provide a better developer experience, including but not limited to:
+
+- **Callback Function Wrapping**: Provide direct closure support for functions that require callback parameters, such as `LoroDoc::subscribe()`, `UndoManager::set_on_push()`, and `EphemeralStore::subscribe()`.
+
+- **Native Type Extensions**: Implement `LoroValueLike` `ContainerIdLike` extensions for built-in types in target languages, enabling direct parameter usage:
+  ```
+  LoroMap.insert("key", "value");
+  LoroMap.insert("key", 123);
+  LoroMap.insert("key", true);
+  LoroMap.insert("key", [1, 2, 3]);
+  // ... and more
+  ```
+
+- **Unified Export Interface**: Create a unified entry point for `LoroDoc::export`:
+  ```
+  class LoroDoc {
+    function export(mode: ExportMode) {
+        // Wraps:
+        // exportSnapshot()
+        // exportUpdates(from)
+        // exportUpdatesInRange(spans)
+        // exportShallowSnapshot(frontiers)
+        // exportStateOnly(frontiers)
+        // exportSnapshotAt(frontiers)
+    }
+  }
+  ```
+
+- **Unified Container Creation Interface**: Provide unified entry points for creating child containers in `LoroMap`/`LoroList`/`LoroMovableList`:
+  ```
+  class LoroMap {
+    function insertContainer(key: string, child: Container) {
+        // Wraps:
+        // insertListContainer
+        // insertMapContainer
+        // insertTextContainer
+        // insertTreeContainer
+        // insertMovableListContainer
+        // insertCounterContainer
+    }
+    function getOrCreateContainer() {}
+    // ... and more
+  }
+  ```
+
+- **Standard Language Interfaces**: Implement essential interfaces (equality, comparison, ordering, etc.) for necessary data types as required by target programming languages.
+
+- **Additional Enhancements**: And many other improvements to enhance usability and developer experience.
+
 ## Community
 
 - **Discord**: [Join our Discord server](https://discord.gg/tUsBSVfqzf)
