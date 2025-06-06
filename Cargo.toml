@@ -1,0 +1,32 @@
+[package]
+name = "loro-ffi"
+version = "1.5.8"
+edition = "2021"
+description = "FFI bindings for Loro"
+authors = ["Liang Zhao", "Zixuan Chen"]
+license = "MIT"
+homepage = "https://loro.dev"
+repository = "https://github.com/loro-dev/loro"
+keywords = ["crdt", "local-first", "ffi"]
+
+[lib]
+name = "loro"
+crate-type = ["cdylib", "staticlib"]
+
+[[bin]]
+# This can be whatever name makes sense for your project, but the rest of this tutorial assumes uniffi-bindgen.
+name = "uniffi-bindgen"
+path = "src/uniffi-bindgen.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+loro = { version = "1.5.8", features = ["counter", "jsonpath"] }
+serde_json = { version = "1" }
+uniffi = { version = "0.28.3" }
+
+[build-dependencies]
+uniffi = { version = "0.28.3", features = ["build"] }
+
+[features]
+cli = ["uniffi/cli"]
