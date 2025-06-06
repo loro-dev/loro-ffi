@@ -34,7 +34,7 @@ Build language-specific wrapper layers around the current UniFFI binding results
 - **Callback Function Wrapping**: Provide direct closure support for functions that require callback parameters, such as `LoroDoc::subscribe()`, `UndoManager::set_on_push()`, and `EphemeralStore::subscribe()`.
 
 - **Native Type Extensions**: Implement `LoroValueLike` `ContainerIdLike` extensions for built-in types in target languages, enabling direct parameter usage:
-  ```
+  ```ts
   LoroMap.insert("key", "value");
   LoroMap.insert("key", 123);
   LoroMap.insert("key", true);
@@ -43,7 +43,7 @@ Build language-specific wrapper layers around the current UniFFI binding results
   ```
 
 - **Unified Export Interface**: Create a unified entry point for `LoroDoc::export`:
-  ```
+  ```ts
   class LoroDoc {
     function export(mode: ExportMode) {
         // Wraps:
@@ -58,7 +58,7 @@ Build language-specific wrapper layers around the current UniFFI binding results
   ```
 
 - **Unified Container Creation Interface**: Provide unified entry points for creating child containers in `LoroMap`/`LoroList`/`LoroMovableList`:
-  ```
+  ```ts
   class LoroMap {
     function insertContainer(key: string, child: Container) {
         // Wraps:
