@@ -227,10 +227,10 @@ impl Cursor {
         self.0.encode()
     }
 
-    pub fn decode(data: &[u8]) -> LoroResult<Arc<Self>> {
-        Ok(Arc::new(Self(loro::cursor::Cursor::decode(data).map_err(
-            |e| LoroError::DecodeError(e.to_string().into_boxed_str()),
-        )?)))
+    pub fn decode(data: &[u8]) -> LoroResult<Self> {
+        Ok(Self(loro::cursor::Cursor::decode(data).map_err(|e| {
+            LoroError::DecodeError(e.to_string().into_boxed_str())
+        })?))
     }
 }
 
