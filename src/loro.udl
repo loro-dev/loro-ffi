@@ -1407,8 +1407,8 @@ enum Side{
 interface Cursor{
     constructor(ID? id, ContainerID container, Side side, u32 origin_pos);
     bytes encode();
-    [Throws=LoroError]
-    Cursor decode(bytes data);
+    [Name=decode, Throws=LoroError]
+    constructor([ByRef]bytes data);
 };
 
 dictionary PosQueryResult{
