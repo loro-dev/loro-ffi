@@ -1,6 +1,6 @@
 use std::{ops::Deref, sync::Arc};
 
-use loro::{cursor::Side, ContainerTrait, LoroList as InnerLoroList, LoroResult, ID};
+use loro::{cursor::Side, ContainerTrait, LoroError, LoroList as InnerLoroList, LoroResult, ID};
 
 use crate::{ContainerID, LoroDoc, LoroValue, LoroValueLike, ValueOrContainer};
 
@@ -221,6 +221,16 @@ impl Cursor {
             side,
             origin_pos as usize,
         ))
+    }
+
+    pub fn encode(&self) -> Vec<u8> {
+        self.0.encode()
+    }
+
+    pub fn decode(data: &[u8]) -> LoroResult<Arc<Self>> {
+        Ok(Arc::new(Self(loro::cursor::Cursor::decode(data).map_err(
+            |e| LoroError::DecodeError(e.to_string().into_boxed_str()),
+        )?)))
     }
 }
 
