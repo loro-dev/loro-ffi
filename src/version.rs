@@ -1,6 +1,8 @@
 use std::{cmp::Ordering, collections::HashMap, sync::RwLock};
 
-use loro::{CounterSpan, IdSpan, LoroResult, PeerID, ID};
+use loro::{IdSpan, LoroResult, PeerID, ID};
+
+use crate::CounterSpan;
 
 pub struct VersionVector(RwLock<loro::VersionVector>);
 
@@ -128,6 +130,116 @@ pub struct VersionVectorDiff {
     pub retreat: HashMap<PeerID, CounterSpan>,
     /// need to add these spans to move from left to right
     pub forward: HashMap<PeerID, CounterSpan>,
+}
+
+pub struct VersionRangeItem {
+    pub peer: PeerID,
+    pub start: i32,
+    pub end: i32,
+}
+
+pub struct VersionRange(RwLock<loro::VersionRange>);
+
+impl VersionRange {
+    pub fn new() -> Self {
+        Self(RwLock::new(loro::VersionRange::new()))
+    }
+
+    pub fn from_vv(vv: &VersionVector) -> Self {
+        let loro_vv: loro::VersionVector = vv.into();
+        Self(RwLock::new(loro::VersionRange::from_vv(&loro_vv)))
+    }
+
+    pub fn clear(&self) {
+        self.0.write().unwrap().clear();
+    }
+
+    pub fn get(&self, peer: PeerID) -> Option<CounterSpan> {
+        self.0
+            .read()
+            .unwrap()
+            .get(&peer)
+            .map(|(start, end)| CounterSpan::new(*start, *end))
+    }
+
+    pub fn insert(&self, peer: PeerID, start: i32, end: i32) {
+        self.0.write().unwrap().insert(peer, start, end);
+    }
+
+    pub fn contains_ops_between(&self, vv_a: &VersionVector, vv_b: &VersionVector) -> bool {
+        let loro_vv_a: loro::VersionVector = vv_a.into();
+        let loro_vv_b: loro::VersionVector = vv_b.into();
+        self.0
+            .read()
+            .unwrap()
+            .contains_ops_between(&loro_vv_a, &loro_vv_b)
+    }
+
+    pub fn has_overlap_with(&self, span: IdSpan) -> bool {
+        self.0.read().unwrap().has_overlap_with(span)
+    }
+
+    pub fn contains_id(&self, id: ID) -> bool {
+        self.0.read().unwrap().contains_id(id)
+    }
+
+    pub fn contains_id_span(&self, span: IdSpan) -> bool {
+        self.0.read().unwrap().contains_id_span(span)
+    }
+
+    pub fn extends_to_include_id_span(&self, span: IdSpan) {
+        self.0.write().unwrap().extends_to_include_id_span(span);
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.read().unwrap().is_empty()
+    }
+
+    pub fn get_peers(&self) -> Vec<PeerID> {
+        self.0
+            .read()
+            .unwrap()
+            .iter()
+            .map(|(peer, _)| *peer)
+            .collect()
+    }
+
+    pub fn get_all_ranges(&self) -> Vec<VersionRangeItem> {
+        self.0
+            .read()
+            .unwrap()
+            .iter()
+            .map(|(peer, (start, end))| VersionRangeItem {
+                peer: *peer,
+                start: *start,
+                end: *end,
+            })
+            .collect()
+    }
+}
+
+impl Default for VersionRange {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl From<loro::VersionRange> for VersionRange {
+    fn from(value: loro::VersionRange) -> Self {
+        Self(RwLock::new(value))
+    }
+}
+
+impl From<VersionRange> for loro::VersionRange {
+    fn from(value: VersionRange) -> Self {
+        value.0.into_inner().unwrap()
+    }
+}
+
+impl From<&VersionRange> for loro::VersionRange {
+    fn from(value: &VersionRange) -> Self {
+        value.0.read().unwrap().clone()
+    }
 }
 
 impl From<loro::VersionVectorDiff> for VersionVectorDiff {

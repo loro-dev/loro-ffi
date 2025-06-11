@@ -38,13 +38,13 @@ impl UndoManager {
     }
 
     /// How many times the undo manager can undo.
-    pub fn undo_count(&self) -> usize {
-        self.0.read().unwrap().undo_count()
+    pub fn undo_count(&self) -> u32 {
+        self.0.read().unwrap().undo_count() as u32
     }
 
     /// How many times the undo manager can redo.
-    pub fn redo_count(&self) -> usize {
-        self.0.read().unwrap().redo_count()
+    pub fn redo_count(&self) -> u32 {
+        self.0.read().unwrap().redo_count() as u32
     }
 
     /// If a local event's origin matches the given prefix, it will not be recorded in the

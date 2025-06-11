@@ -9,14 +9,14 @@ use std::{
 use loro::{
     cursor::CannotFindRelativePosition, ChangeTravelError, CounterSpan, DocAnalysis,
     FrontiersNotIncluded, IdSpan, JsonPathError, JsonSchema, Lamport, LoroDoc as InnerLoroDoc,
-    LoroEncodeError, LoroError, LoroResult, PeerID, StyleConfig, Timestamp, VersionRange, ID,
+    LoroEncodeError, LoroError, LoroResult, PeerID, StyleConfig, Timestamp, ID,
 };
 
 use crate::{
     event::{DiffBatch, DiffEvent, Subscriber},
     AbsolutePosition, Configure, ContainerID, ContainerIdLike, Cursor, Frontiers, Index,
     LoroCounter, LoroList, LoroMap, LoroMovableList, LoroText, LoroTree, LoroValue, StyleConfigMap,
-    ValueOrContainer, VersionVector, VersionVectorDiff,
+    ValueOrContainer, VersionRange, VersionVector, VersionVectorDiff,
 };
 
 /// Decodes the metadata for an imported blob from the provided bytes.
@@ -368,11 +368,11 @@ impl LoroDoc {
     pub fn redact_json_updates(
         &self,
         json: &str,
-        version_range: VersionRange,
+        version_range: &VersionRange,
     ) -> Result<String, LoroError> {
         let mut schema: JsonSchema =
             serde_json::from_str(json).map_err(|_e| LoroError::InvalidJsonSchema)?;
-        loro::json::redact(&mut schema, version_range)
+        loro::json::redact(&mut schema, version_range.into())
             .map_err(|e| LoroError::Unknown(e.to_string().into_boxed_str()))?;
         Ok(serde_json::to_string(&schema).unwrap())
     }
@@ -1088,7 +1088,7 @@ impl From<loro::ImportStatus> for ImportStatus {
     }
 }
 
-fn vr_to_map(a: &VersionRange) -> HashMap<u64, CounterSpan> {
+fn vr_to_map(a: &loro::VersionRange) -> HashMap<u64, CounterSpan> {
     a.iter()
         .map(|x| {
             (

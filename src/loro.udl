@@ -619,9 +619,20 @@ interface LoroDoc{
     /// You can modify the commit message and timestamp in the callback by [`ChangeModifier`].
     Subscription subscribe_pre_commit(PreCommitCallback callback);
 
-    // TODO: version range
-    // [Throws=LoroError]
-    // string redact_json_updates([ByRef] string json, VersionRange version_range);
+    /// Redacts sensitive content in JSON updates within the specified version range.
+    ///
+    /// This function allows you to share document history while removing potentially sensitive content.
+    /// It preserves the document structure and collaboration capabilities while replacing content with
+    /// placeholders according to these redaction rules:
+    ///
+    /// - Preserves delete and move operations
+    /// - Replaces text insertion content with the Unicode replacement character
+    /// - Substitutes list and map insert values with null
+    /// - Maintains structure of child containers
+    /// - Replaces text mark values with null
+    /// - Preserves map keys and text annotation keys
+    [Throws=LoroError]
+    string redact_json_updates([ByRef] string json, [ByRef] VersionRange version_range);
 
     /// Set whether to hide empty root containers.
     void set_hide_empty_root_containers(boolean hide);
@@ -1513,6 +1524,55 @@ dictionary VersionVectorDiff{
     record<u64, CounterSpan> forward;
 };
 
+interface VersionRange{
+    constructor();
+    
+    /// Create a VersionRange from a VersionVector
+    [Name=from_vv]
+    constructor([ByRef] VersionVector vv);
+    
+    /// Clear all ranges in the VersionRange
+    void clear();
+    
+    /// Get the counter range for a specific peer
+    /// Returns the counter range if the peer exists, null otherwise
+    CounterSpan? get(u64 peer);
+    
+    /// Insert a counter range for a specific peer
+    void insert(u64 peer, i32 start, i32 end);
+    
+    /// Check if this VersionRange contains operations between two VersionVectors
+    boolean contains_ops_between([ByRef] VersionVector vv_a, [ByRef] VersionVector vv_b);
+    
+    /// Check if this VersionRange has overlap with the given ID span
+    boolean has_overlap_with(IdSpan span);
+    
+    /// Check if this VersionRange contains a specific ID
+    boolean contains_id(ID id);
+    
+    /// Check if this VersionRange contains a specific ID span
+    boolean contains_id_span(IdSpan span);
+    
+    /// Extend this VersionRange to include the given ID span
+    void extends_to_include_id_span(IdSpan span);
+    
+    /// Check if the VersionRange is empty
+    boolean is_empty();
+    
+    /// Get all peer IDs in this VersionRange
+    sequence<u64> get_peers();
+    
+    /// Get all ranges as a list of (peer, start, end) tuples
+    sequence<VersionRangeItem> get_all_ranges();
+};
+
+dictionary VersionRangeItem{
+    u64 peer;
+    i32 start;
+    i32 end;
+};
+
+
 // ============= UNDO MANAGER =============
 
 interface UndoManager{
@@ -1537,8 +1597,11 @@ interface UndoManager{
     /// Whether the undo manager can redo.
     boolean can_redo();
 
-    // TODO: undo count
-    // TODO: redo count
+    /// How many times the undo manager can undo.
+    u32 undo_count();
+
+    /// How many times the undo manager can redo.
+    u32 redo_count();
 
     /// If a local event's origin matches the given prefix, it will not be recorded in the
     /// undo stack.
