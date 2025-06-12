@@ -9,10 +9,6 @@ homepage = "https://loro.dev"
 repository = "https://github.com/loro-dev/loro"
 keywords = ["crdt", "local-first", "ffi"]
 
-[lib]
-name = "loro_ffi"
-crate-type = ["lib", "cdylib", "staticlib"]
-
 [[bin]]
 # This can be whatever name makes sense for your project, but the rest of this tutorial assumes uniffi-bindgen.
 name = "uniffi-bindgen"
