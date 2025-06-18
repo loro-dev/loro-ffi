@@ -2,7 +2,10 @@ use std::sync::Arc;
 
 use loro::{ContainerTrait, LoroResult, PeerID};
 
-use crate::{ContainerID, LoroDoc, LoroValue, LoroValueLike, ValueOrContainer};
+use crate::{
+    ContainerID, DiffEvent, LoroDoc, LoroValue, LoroValueLike, Subscriber, Subscription,
+    ValueOrContainer,
+};
 
 use super::{LoroCounter, LoroList, LoroMovableList, LoroText, LoroTree};
 
@@ -242,6 +245,14 @@ impl LoroMap {
 
     pub fn doc(&self) -> Option<Arc<LoroDoc>> {
         self.inner.doc().map(|x| Arc::new(LoroDoc { doc: x }))
+    }
+
+    pub fn subscribe(&self, subscriber: Arc<dyn Subscriber>) -> Option<Arc<Subscription>> {
+        self.inner
+            .subscribe(Arc::new(move |e| {
+                subscriber.on_diff(DiffEvent::from(e));
+            }))
+            .map(|x| Arc::new(x.into()))
     }
 }
 

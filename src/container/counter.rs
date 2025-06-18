@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use loro::{ContainerTrait, LoroResult};
 
-use crate::{ContainerID, LoroDoc};
+use crate::{ContainerID, DiffEvent, LoroDoc, Subscriber, Subscription};
 
 #[derive(Debug, Clone)]
 pub struct LoroCounter {
@@ -57,6 +57,14 @@ impl LoroCounter {
 
     pub fn doc(&self) -> Option<Arc<LoroDoc>> {
         self.inner.doc().map(|x| Arc::new(LoroDoc { doc: x }))
+    }
+
+    pub fn subscribe(&self, subscriber: Arc<dyn Subscriber>) -> Option<Arc<Subscription>> {
+        self.inner
+            .subscribe(Arc::new(move |e| {
+                subscriber.on_diff(DiffEvent::from(e));
+            }))
+            .map(|x| Arc::new(x.into()))
     }
 }
 

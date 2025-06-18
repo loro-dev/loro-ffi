@@ -1,6 +1,6 @@
 [package]
 name = "loro-ffi"
-version = "1.5.8"
+version = "1.5.9"
 edition = "2021"
 description = "FFI bindings for Loro"
 authors = ["Liang Zhao", "Zixuan Chen"]
@@ -17,7 +17,7 @@ path = "src/uniffi-bindgen.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-loro = { version = "1.5.8", features = ["counter", "jsonpath"] }
+loro = { version = "1.5.9", features = ["counter", "jsonpath"] }
 serde_json = { version = "1" }
 uniffi = { version = "0.28.3" }
 
