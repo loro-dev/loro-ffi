@@ -1,3 +1,5 @@
+use loro::ContainerTrait;
+
 use crate::ContainerID;
 
 #[derive(Debug, Clone)]

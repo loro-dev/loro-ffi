@@ -1,6 +1,5 @@
 mod value;
 
-use loro::Container;
 pub use loro::{
     cursor::Side, undo::UndoOrRedo, CannotFindRelativePosition, ChangeTravelError, Counter,
     CounterSpan, EventTriggerKind, ExpandType, FractionalIndex, IdLp, IdSpan, JsonChange,
@@ -8,6 +7,7 @@ pub use loro::{
     JsonOpContent, JsonPathError, JsonSchema, JsonTextOp, JsonTreeOp, Lamport, LoroEncodeError,
     LoroError, PeerID, StyleConfig, TreeID, UpdateOptions, UpdateTimeoutError, ID, LORO_VERSION,
 };
+use loro::{Container, ContainerTrait};
 pub use std::cmp::Ordering;
 use std::sync::Arc;
 pub use value::*;

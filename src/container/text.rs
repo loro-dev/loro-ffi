@@ -3,7 +3,9 @@ use std::{fmt::Display, sync::Arc};
 use loro::TextDelta as InternalTextDelta;
 use loro::{cursor::Side, ContainerTrait, LoroResult, PeerID, UpdateOptions, UpdateTimeoutError};
 
-use crate::{ContainerID, LoroDoc, LoroValue, LoroValueLike, TextDelta};
+use crate::{
+    ContainerID, DiffEvent, LoroDoc, LoroValue, LoroValueLike, Subscriber, Subscription, TextDelta,
+};
 
 use super::Cursor;
 
@@ -78,9 +80,8 @@ impl LoroText {
     }
 
     /// Get the characters at given unicode position.
-    // TODO:
-    pub fn char_at(&self, pos: u32) -> LoroResult<char> {
-        self.inner.char_at(pos as usize)
+    pub fn char_at(&self, pos: u32) -> LoroResult<String> {
+        self.inner.char_at(pos as usize).map(|c| c.to_string())
     }
 
     /// Delete specified character and insert string at the same position at given unicode position.
@@ -114,7 +115,6 @@ impl LoroText {
     }
 
     /// Apply a [delta](https://quilljs.com/docs/delta/) to the text container.
-    // TODO:
     pub fn apply_delta(&self, delta: Vec<TextDelta>) -> LoroResult<()> {
         let internal_delta: Vec<InternalTextDelta> = delta.into_iter().map(|d| d.into()).collect();
         self.inner.apply_delta(&internal_delta)
@@ -302,6 +302,14 @@ impl LoroText {
 
     pub fn doc(&self) -> Option<Arc<LoroDoc>> {
         self.inner.doc().map(|x| Arc::new(LoroDoc { doc: x }))
+    }
+
+    pub fn subscribe(&self, subscriber: Arc<dyn Subscriber>) -> Option<Arc<Subscription>> {
+        self.inner
+            .subscribe(Arc::new(move |e| {
+                subscriber.on_diff(DiffEvent::from(e));
+            }))
+            .map(|x| Arc::new(x.into()))
     }
 }
 

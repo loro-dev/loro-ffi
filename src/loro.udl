@@ -697,6 +697,10 @@ interface LoroText{
     [Throws=LoroError]
     string splice(u32 pos, u32 len, [ByRef] string s);
 
+    /// Get the characters at given unicode position.
+    [Throws=LoroError]
+    string char_at(u32 pos);
+
     /// Whether the text container is empty.
     boolean is_empty();
 
@@ -801,6 +805,19 @@ interface LoroText{
 
     /// Get the LoroDoc from this container
     LoroDoc? doc();
+
+    /// Subscribe the events of a container.
+    ///
+    /// The callback will be invoked when the container is changed.
+    /// Returns a subscription that can be used to unsubscribe.
+    ///
+    /// The events will be emitted after a transaction is committed. A transaction is committed when:
+    ///
+    /// - `doc.commit()` is called.
+    /// - `doc.export(mode)` is called.
+    /// - `doc.import(data)` is called.
+    /// - `doc.checkout(version)` is called.
+    Subscription? subscribe(Subscriber subscriber);
 };
 
 interface LoroList{
@@ -891,6 +908,19 @@ interface LoroList{
 
     /// Get the LoroDoc from this container
     LoroDoc? doc();
+
+    /// Subscribe the events of a container.
+    ///
+    /// The callback will be invoked when the container is changed.
+    /// Returns a subscription that can be used to unsubscribe.
+    ///
+    /// The events will be emitted after a transaction is committed. A transaction is committed when:
+    ///
+    /// - `doc.commit()` is called.
+    /// - `doc.export(mode)` is called.
+    /// - `doc.import(data)` is called.
+    /// - `doc.checkout(version)` is called.
+    Subscription? subscribe(Subscriber subscriber);
 };
 
 interface LoroMap{
@@ -985,6 +1015,19 @@ interface LoroMap{
 
     /// Get the LoroDoc from this container
     LoroDoc? doc();
+
+    /// Subscribe the events of a container.
+    ///
+    /// The callback will be invoked when the container is changed.
+    /// Returns a subscription that can be used to unsubscribe.
+    ///
+    /// The events will be emitted after a transaction is committed. A transaction is committed when:
+    ///
+    /// - `doc.commit()` is called.
+    /// - `doc.export(mode)` is called.
+    /// - `doc.import(data)` is called.
+    /// - `doc.checkout(version)` is called.
+    Subscription? subscribe(Subscriber subscriber);
 };
 
 interface LoroTree{
@@ -1120,6 +1163,19 @@ interface LoroTree{
 
     /// Get the LoroDoc from this container
     LoroDoc? doc();
+
+    /// Subscribe the events of a container.
+    ///
+    /// The callback will be invoked when the container is changed.
+    /// Returns a subscription that can be used to unsubscribe.
+    ///
+    /// The events will be emitted after a transaction is committed. A transaction is committed when:
+    ///
+    /// - `doc.commit()` is called.
+    /// - `doc.export(mode)` is called.
+    /// - `doc.import(data)` is called.
+    /// - `doc.checkout(version)` is called.
+    Subscription? subscribe(Subscriber subscriber);
 };
 
 interface LoroMovableList{
@@ -1256,6 +1312,19 @@ interface LoroMovableList{
 
     /// Get the LoroDoc from this container
     LoroDoc? doc();
+
+    /// Subscribe the events of a container.
+    ///
+    /// The callback will be invoked when the container is changed.
+    /// Returns a subscription that can be used to unsubscribe.
+    ///
+    /// The events will be emitted after a transaction is committed. A transaction is committed when:
+    ///
+    /// - `doc.commit()` is called.
+    /// - `doc.export(mode)` is called.
+    /// - `doc.import(data)` is called.
+    /// - `doc.checkout(version)` is called.
+    Subscription? subscribe(Subscriber subscriber);
 };
 
 interface LoroCounter{
@@ -1290,6 +1359,19 @@ interface LoroCounter{
 
     /// Get the LoroDoc from this container
     LoroDoc? doc();
+
+    /// Subscribe the events of a container.
+    ///
+    /// The callback will be invoked when the container is changed.
+    /// Returns a subscription that can be used to unsubscribe.
+    ///
+    /// The events will be emitted after a transaction is committed. A transaction is committed when:
+    ///
+    /// - `doc.commit()` is called.
+    /// - `doc.export(mode)` is called.
+    /// - `doc.import(data)` is called.
+    /// - `doc.checkout(version)` is called.
+    Subscription? subscribe(Subscriber subscriber);
 };
 
 interface LoroUnknown{
