@@ -1702,6 +1702,21 @@ interface UndoManager{
     /// Set the listener for pop events.
     /// The listener will be called when an undo/redo item is popped from the stack.
     void set_on_pop(OnPop? on_pop);
+
+    /// Will start a new group of changes, all subsequent changes will be merged
+    /// into a new item on the undo stack. If we receive remote changes, we determine
+    /// wether or not they are conflicting. If the remote changes are conflicting
+    /// we split the undo item and close the group. If there are no conflict
+    /// in changed container ids we continue the group merge.
+    [Throws=LoroError]
+    void group_start();
+
+    /// Ends the current group, calling UndoManager::undo() after this will
+    /// undo all changes that occurred during the group.
+    void group_end();
+
+    /// Get the peer id of the undo manager
+    u64 peer();
 };
 
 enum UndoOrRedo{
