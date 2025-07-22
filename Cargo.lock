@@ -749,7 +749,7 @@ dependencies = [
 
 [[package]]
 name = "loro-ffi"
-version = "1.5.9"
+version = "1.5.10"
 dependencies = [
  "loro",
  "serde_json",
