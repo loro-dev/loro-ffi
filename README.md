@@ -18,6 +18,10 @@ Loro FFI provides cross-language bindings for the Loro CRDT library, enabling de
 - [loro-cs](https://github.com/sensslen/loro-cs): **C#** Binding for Loro (community)
 - [loro-go](https://github.com/aholstenson/loro-go): **Go** Binding for Loro (community)
 
+## CHANGE LOG
+
+You can find the updates [here](./doc/CHANGELOG.md)
+
 ## Build Binding
 
 Read the UniFFI [documentation](https://mozilla.github.io/uniffi-rs/) and modify the [uniffi.toml](./uniffi.toml) configuration in this repository as needed.
