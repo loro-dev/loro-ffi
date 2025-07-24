@@ -1572,7 +1572,9 @@ interface VersionVector{
     void set_last(ID id);
     i32? get_last(u64 peer);
     void set_end(ID id);
-    // boolean try_update_last(ID id);
+
+    /// Update the end counter of the given client if the end is greater. Return whether updated
+    boolean try_update_last(ID id);
     sequence<IdSpan> get_missing_span([ByRef] VersionVector target);
     void merge([ByRef] VersionVector other);
     boolean includes_vv([ByRef] VersionVector other);
@@ -1585,6 +1587,7 @@ interface VersionVector{
     constructor([ByRef]bytes bytes);
     Ordering? partial_cmp([ByRef]VersionVector other);
     boolean eq([ByRef]VersionVector other);
+    record<u64, i32> to_hashmap();
 };
 
 interface Frontiers{
@@ -1597,6 +1600,8 @@ interface Frontiers{
     [Name=decode, Throws=LoroError]
     constructor([ByRef]bytes bytes);
     boolean eq([ByRef]Frontiers other);
+    boolean is_empty();
+    sequence<ID> to_vec();
 };
 
 dictionary VersionVectorDiff{

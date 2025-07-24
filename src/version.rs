@@ -75,6 +75,19 @@ impl VersionVector {
         let ans = Self(RwLock::new(loro::VersionVector::decode(bytes)?));
         Ok(ans)
     }
+
+    pub fn to_hashmap(&self) -> HashMap<u64, i32> {
+        self.0
+            .read()
+            .unwrap()
+            .iter()
+            .map(|(id, version)| (*id, *version))
+            .collect()
+    }
+
+    pub fn try_update_last(&self, id: ID) -> bool {
+        self.0.write().unwrap().try_update_last(id)
+    }
 }
 
 impl PartialEq for VersionVector {
@@ -108,6 +121,14 @@ impl Frontiers {
     pub fn decode(bytes: &[u8]) -> LoroResult<Self> {
         let ans = Self(loro::Frontiers::decode(bytes)?);
         Ok(ans)
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    pub fn to_vec(&self) -> Vec<ID> {
+        self.0.to_vec()
     }
 }
 
