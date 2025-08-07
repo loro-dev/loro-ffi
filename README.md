@@ -1,7 +1,7 @@
 # Loro FFI
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.5.8-green.svg)](Cargo.toml)
+[![Version](https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fgithub.com%2Floro-dev%2Floro-ffi%2Fraw%2Frefs%2Fheads%2Fmain%2FCargo.toml&query=%24.package.version&label=version)](Cargo.toml)
 [![Rust](https://img.shields.io/badge/rust-1.0+-orange.svg)](https://www.rust-lang.org)
 
 Foreign Function Interface (FFI) bindings for [Loro](https://loro.dev), a high-performance CRDT library for building collaborative applications.

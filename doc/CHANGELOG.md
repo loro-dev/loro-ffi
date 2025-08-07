@@ -1,5 +1,10 @@
 # Change Log
 
+## v1.5.12
+
+### Fix
+- fix EventHint cross-container merge bug 
+
 ## v1.5.11
 
 ### New
