@@ -392,9 +392,6 @@ interface LoroDoc{
     /// Subscribe the local update of the document.
     Subscription subscribe_local_update(LocalUpdateCallback callback);
 
-    /// Estimate the size of the document states in memory.
-    void log_estimate_size();
-
     /// Check the correctness of the document state by comparing it with the state
     /// calculated by applying all the history.
     void check_state_correctness_slow();
@@ -1542,6 +1539,7 @@ interface EphemeralStore{
     constructor(i64 timeout);
     bytes encode([ByRef] string key);
     bytes encode_all();
+    [Throws=LoroError]
     void apply([ByRef] bytes data);
     void set([ByRef] string key, LoroValueLike value);
     void delete([ByRef] string key);

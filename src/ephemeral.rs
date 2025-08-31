@@ -1,6 +1,6 @@
 use crate::{LoroValue, LoroValueLike, Subscription};
 pub use loro::awareness::EphemeralEventTrigger;
-use loro::awareness::EphemeralStore as InternalEphemeralStore;
+use loro::{awareness::EphemeralStore as InternalEphemeralStore, LoroError, LoroResult};
 use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Clone)]
@@ -33,8 +33,10 @@ impl EphemeralStore {
         self.0.encode_all()
     }
 
-    pub fn apply(&self, data: &[u8]) {
-        self.0.apply(data)
+    pub fn apply(&self, data: &[u8]) -> LoroResult<()> {
+        self.0
+            .apply(data)
+            .map_err(|e| LoroError::DecodeError(e.into()))
     }
 
     pub fn set(&self, key: &str, value: Arc<dyn LoroValueLike>) {

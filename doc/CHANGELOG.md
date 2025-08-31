@@ -1,5 +1,9 @@
 # Change Log
 
+## v1.6.0
+
+- bump version to loro 1.6.0
+
 ## v1.5.12
 
 ### Fix

@@ -541,12 +541,6 @@ impl LoroDoc {
         Arc::new(Subscription(Mutex::new(Some(s))))
     }
 
-    /// Estimate the size of the document states in memory.
-    #[inline]
-    pub fn log_estimate_size(&self) {
-        self.doc.log_estimate_size();
-    }
-
     /// Check the correctness of the document state by comparing it with the state
     /// calculated by applying all the history.
     #[inline]
