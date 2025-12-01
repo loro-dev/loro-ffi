@@ -4,7 +4,7 @@ pub use loro::{
     cursor::{PosType, Side},
     undo::UndoOrRedo,
     CannotFindRelativePosition, ChangeTravelError, Counter, CounterSpan, EventTriggerKind,
-    ExpandType, FractionalIndex, IdLp, IdSpan, JsonChange, JsonFutureOp, JsonFutureOpWrapper,
+    ExpandType, IdLp, IdSpan, JsonChange, JsonFutureOp, JsonFutureOpWrapper,
     JsonListOp, JsonMapOp, JsonMovableListOp, JsonOp, JsonOpContent, JsonSchema, JsonTextOp,
     JsonTreeOp, Lamport, LoroEncodeError, LoroError, PeerID, StyleConfig, TreeID, UpdateOptions,
     UpdateTimeoutError, ID, LORO_VERSION,
@@ -31,6 +31,8 @@ mod awareness;
 pub use awareness::*;
 mod ephemeral;
 pub use ephemeral::*;
+mod fractional_index;
+pub use fractional_index::*;
 
 // https://github.com/mozilla/uniffi-rs/issues/1372
 pub trait ValueOrContainer: Send + Sync {
