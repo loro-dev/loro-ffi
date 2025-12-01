@@ -654,6 +654,7 @@ dictionary ContainerPath{
 
 // ============= CONTAINERS =============
 
+[Traits=(Display)]
 interface LoroText{
     /// Create a new container that is detached from the document.
     ///
@@ -806,9 +807,6 @@ interface LoroText{
 
     /// Get the text in [Delta](https://quilljs.com/docs/delta/) format.
     LoroValue get_richtext_value();
-
-    /// Get the text content of the text container.
-    string to_string();
 
     /// Get the cursor at the given position in the given Unicode position..
     ///
@@ -1957,12 +1955,12 @@ dictionary UpdateOptions{
    boolean use_refined_diff;
 };
 
+[Traits=(Display)]
 interface FractionalIndex{
     [Name=from_bytes]
     constructor(bytes bytes);
     [Name=from_hex_string]
     constructor([ByRef] string str);
-    string to_string();
 };
 
 
