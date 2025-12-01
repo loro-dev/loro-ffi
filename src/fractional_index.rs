@@ -22,7 +22,7 @@ impl FractionalIndex {
 
 impl Display for FractionalIndex {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.inner)
+        write!(f, "{}", self.inner.to_string())
     }
 }
 
