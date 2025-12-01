@@ -1,5 +1,11 @@
 # Change Log
 
+## v1.10.0
+
+- bump crate and dependency to loro 1.10.0
+- add text UTF-16 helpers, `slice_delta`, position conversion via `PosType`, and UTF-8/UTF-16 mark/unmark helpers
+- expose `get_container` from `LoroDoc` and surface new `LoroError::ImportUnsupportedEncodingMode`
+
 ## v1.6.0
 
 - bump version to loro 1.6.0

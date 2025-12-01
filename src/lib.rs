@@ -1,12 +1,16 @@
 mod value;
 
 pub use loro::{
-    cursor::Side, undo::UndoOrRedo, CannotFindRelativePosition, ChangeTravelError, Counter,
-    CounterSpan, EventTriggerKind, ExpandType, FractionalIndex, IdLp, IdSpan, JsonChange,
-    JsonFutureOp, JsonFutureOpWrapper, JsonListOp, JsonMapOp, JsonMovableListOp, JsonOp,
-    JsonOpContent, JsonPathError, JsonSchema, JsonTextOp, JsonTreeOp, Lamport, LoroEncodeError,
-    LoroError, PeerID, StyleConfig, TreeID, UpdateOptions, UpdateTimeoutError, ID, LORO_VERSION,
+    cursor::{PosType, Side},
+    undo::UndoOrRedo,
+    CannotFindRelativePosition, ChangeTravelError, Counter, CounterSpan, EventTriggerKind,
+    ExpandType, FractionalIndex, IdLp, IdSpan, JsonChange, JsonFutureOp, JsonFutureOpWrapper,
+    JsonListOp, JsonMapOp, JsonMovableListOp, JsonOp, JsonOpContent, JsonSchema, JsonTextOp,
+    JsonTreeOp, Lamport, LoroEncodeError, LoroError, PeerID, StyleConfig, TreeID, UpdateOptions,
+    UpdateTimeoutError, ID, LORO_VERSION,
 };
+
+pub use loro::jsonpath::jsonpath_impl::JsonPathError;
 use loro::{Container, ContainerTrait};
 pub use std::cmp::Ordering;
 use std::sync::Arc;

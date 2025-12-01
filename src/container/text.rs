@@ -1,7 +1,10 @@
 use std::{fmt::Display, sync::Arc};
 
 use loro::TextDelta as InternalTextDelta;
-use loro::{cursor::Side, ContainerTrait, LoroResult, PeerID, UpdateOptions, UpdateTimeoutError};
+use loro::{
+    cursor::{PosType, Side},
+    ContainerTrait, LoroResult, PeerID, UpdateOptions, UpdateTimeoutError,
+};
 
 use crate::{
     ContainerID, DiffEvent, LoroDoc, LoroValue, LoroValueLike, Subscriber, Subscription, TextDelta,
@@ -64,6 +67,11 @@ impl LoroText {
         self.inner.insert_utf8(pos as usize, s)
     }
 
+    /// Insert a string at the given utf-16 position.
+    pub fn insert_utf16(&self, pos: u32, s: &str) -> LoroResult<()> {
+        self.inner.insert_utf16(pos as usize, s)
+    }
+
     /// Delete a range of text at the given unicode position with unicode length.
     pub fn delete(&self, pos: u32, len: u32) -> LoroResult<()> {
         self.inner.delete(pos as usize, len as usize)
@@ -74,9 +82,31 @@ impl LoroText {
         self.inner.delete_utf8(pos as usize, len as usize)
     }
 
+    /// Delete a range of text at the given utf-16 position with utf-16 length.
+    pub fn delete_utf16(&self, pos: u32, len: u32) -> LoroResult<()> {
+        self.inner.delete_utf16(pos as usize, len as usize)
+    }
+
     /// Get a string slice at the given Unicode range
     pub fn slice(&self, start_index: u32, end_index: u32) -> LoroResult<String> {
         self.inner.slice(start_index as usize, end_index as usize)
+    }
+
+    /// Get a string slice at the given UTF-16 range
+    pub fn slice_utf16(&self, start_index: u32, end_index: u32) -> LoroResult<String> {
+        self.inner
+            .slice_utf16(start_index as usize, end_index as usize)
+    }
+
+    pub fn slice_delta(
+        &self,
+        start_index: u32,
+        end_index: u32,
+        pos_type: PosType,
+    ) -> LoroResult<Vec<TextDelta>> {
+        self.inner
+            .slice_delta(start_index as usize, end_index as usize, pos_type)
+            .map(|d| d.into_iter().map(|x| x.into()).collect())
     }
 
     /// Get the characters at given unicode position.
@@ -87,6 +117,12 @@ impl LoroText {
     /// Delete specified character and insert string at the same position at given unicode position.
     pub fn splice(&self, pos: u32, len: u32, s: &str) -> LoroResult<String> {
         self.inner.splice(pos as usize, len as usize, s)
+    }
+
+    /// Delete specified range and insert a string at the same UTF-16 position.
+    pub fn splice_utf16(&self, pos: u32, len: u32, s: &str) -> LoroResult<()> {
+        self.inner
+            .splice_utf16(pos as usize, len as usize, s)
     }
 
     /// Whether the text container is empty.
@@ -145,6 +181,34 @@ impl LoroText {
             .mark(from as usize..to as usize, key, value.as_loro_value())
     }
 
+    pub fn mark_utf8(
+        &self,
+        from: u32,
+        to: u32,
+        key: &str,
+        value: Arc<dyn LoroValueLike>,
+    ) -> LoroResult<()> {
+        self.inner.mark_utf8(
+            from as usize..to as usize,
+            key,
+            value.as_loro_value(),
+        )
+    }
+
+    pub fn mark_utf16(
+        &self,
+        from: u32,
+        to: u32,
+        key: &str,
+        value: Arc<dyn LoroValueLike>,
+    ) -> LoroResult<()> {
+        self.inner.mark_utf16(
+            from as usize..to as usize,
+            key,
+            value.as_loro_value(),
+        )
+    }
+
     /// Unmark a range of text with a key and a value.
     ///
     /// You can use it to remove highlights, bolds or links
@@ -163,6 +227,11 @@ impl LoroText {
     /// Note: you cannot delete unmergeable annotations like comments by this method.
     pub fn unmark(&self, from: u32, to: u32, key: &str) -> LoroResult<()> {
         self.inner.unmark(from as usize..to as usize, key)
+    }
+
+    pub fn unmark_utf16(&self, from: u32, to: u32, key: &str) -> LoroResult<()> {
+        self.inner
+            .unmark_utf16(from as usize..to as usize, key)
     }
 
     /// Get the text in [Delta](https://quilljs.com/docs/delta/) format.
@@ -302,6 +371,12 @@ impl LoroText {
 
     pub fn doc(&self) -> Option<Arc<LoroDoc>> {
         self.inner.doc().map(|x| Arc::new(LoroDoc { doc: x }))
+    }
+
+    pub fn convert_pos(&self, index: u32, from: PosType, to: PosType) -> Option<u32> {
+        self.inner
+            .convert_pos(index as usize, from, to)
+            .map(|v| v as u32)
     }
 
     pub fn subscribe(&self, subscriber: Arc<dyn Subscriber>) -> Option<Arc<Subscription>> {

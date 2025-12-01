@@ -250,6 +250,9 @@ interface LoroDoc{
     /// If the provided id is string, it will be converted into a root container id with the name of the string.
     LoroCounter get_counter(ContainerIdLike id);
 
+    /// Get a container by container id.
+    ValueOrContainer? get_container([ByRef] ContainerID id);
+
     /// Commit the cumulative auto commit transaction.
     ///
     /// There is a transaction behind every operation.
@@ -678,6 +681,10 @@ interface LoroText{
     [Throws=LoroError]
     void insert_utf8(u32 pos, [ByRef] string s);
 
+    /// Insert a string at the given utf-16 position.
+    [Throws=LoroError]
+    void insert_utf16(u32 pos, [ByRef] string s);
+
     /// Delete a range of text at the given unicode position with unicode length.
     [Throws=LoroError]
     void delete(u32 pos, u32 len);
@@ -686,13 +693,29 @@ interface LoroText{
     [Throws=LoroError]
     void delete_utf8(u32 pos, u32 len);
 
+    /// Delete a range of text at the given utf-16 position with utf-16 length.
+    [Throws=LoroError]
+    void delete_utf16(u32 pos, u32 len);
+
     /// Get a string slice at the given Unicode range
     [Throws=LoroError]
     string slice(u32 start_index, u32 end_index);
 
+    /// Get a string slice at the given UTF-16 range
+    [Throws=LoroError]
+    string slice_utf16(u32 start_index, u32 end_index);
+
+    /// Get the rich-text delta within a range.
+    [Throws=LoroError]
+    sequence<TextDelta> slice_delta(u32 start_index, u32 end_index, PosType pos_type);
+
     /// Delete specified character and insert string at the same position at given unicode position.
     [Throws=LoroError]
     string splice(u32 pos, u32 len, [ByRef] string s);
+
+    /// Delete specified range and insert a string at the same UTF-16 position.
+    [Throws=LoroError]
+    void splice_utf16(u32 pos, u32 len, [ByRef] string s);
 
     /// Get the characters at given unicode position.
     [Throws=LoroError]
@@ -747,6 +770,14 @@ interface LoroText{
     [Throws=LoroError]
     void mark(u32 from, u32 to, [ByRef] string key, LoroValueLike value);
 
+    /// Mark a range of text with UTF-8 offsets.
+    [Throws=LoroError]
+    void mark_utf8(u32 from, u32 to, [ByRef] string key, LoroValueLike value);
+
+    /// Mark a range of text with UTF-16 offsets.
+    [Throws=LoroError]
+    void mark_utf16(u32 from, u32 to, [ByRef] string key, LoroValueLike value);
+
     /// Unmark a range of text with a key and a value.
     ///
     /// You can use it to remove highlights, bolds or links
@@ -765,6 +796,10 @@ interface LoroText{
     /// Note: you cannot delete unmergeable annotations like comments by this method.
     [Throws=LoroError]
     void unmark(u32 from, u32 to, [ByRef] string key);
+
+    /// Unmark a UTF-16 range of text with a key.
+    [Throws=LoroError]
+    void unmark_utf16(u32 from, u32 to, [ByRef] string key);
 
     /// Get the text in [Delta](https://quilljs.com/docs/delta/) format.
     sequence<TextDelta> to_delta();
@@ -792,6 +827,9 @@ interface LoroText{
 
     /// Whether the container is deleted.
     boolean is_deleted();
+
+    /// Convert a position between coordinate systems (Unicode, UTF-16, UTF-8 bytes, Event).
+    u32? convert_pos(u32 index, PosType from, PosType to);
 
     /// Push a string to the end of the text container.
     [Throws=LoroError]
@@ -1494,6 +1532,14 @@ enum Side{
     "Right",
 };
 
+enum PosType{
+    "Bytes",
+    "Unicode",
+    "Utf16",
+    "Event",
+    "Entity",
+};
+
 interface Cursor{
     constructor(ID? id, ContainerID container, Side side, u32 origin_pos);
     bytes encode();
@@ -2010,6 +2056,7 @@ enum LoroError {
     "EndIndexLessThanStartIndex",
     "InvalidRootContainerName",
     "ImportUpdatesThatDependsOnOutdatedVersion",
+    "ImportUnsupportedEncodingMode",
     "SwitchToVersionBeforeShallowRoot",
     "ContainerDeleted",
     "ConcurrentOpsWithSamePeerID",

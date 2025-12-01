@@ -8,15 +8,15 @@ use std::{
 
 use loro::{
     cursor::CannotFindRelativePosition, ChangeTravelError, CounterSpan, DocAnalysis,
-    FrontiersNotIncluded, IdSpan, JsonPathError, JsonSchema, Lamport, LoroDoc as InnerLoroDoc,
-    LoroEncodeError, LoroError, LoroResult, PeerID, StyleConfig, Timestamp, ID,
+    FrontiersNotIncluded, IdSpan, JsonSchema, Lamport, LoroDoc as InnerLoroDoc, LoroEncodeError,
+    LoroError, LoroResult, PeerID, StyleConfig, Timestamp, ID,
 };
 
 use crate::{
     event::{DiffBatch, DiffEvent, Subscriber},
     AbsolutePosition, Configure, ContainerID, ContainerIdLike, Cursor, Frontiers, Index,
     LoroCounter, LoroList, LoroMap, LoroMovableList, LoroText, LoroTree, LoroValue, StyleConfigMap,
-    ValueOrContainer, VersionRange, VersionVector, VersionVectorDiff,
+    ValueOrContainer, VersionRange, VersionVector, VersionVectorDiff, JsonPathError,
 };
 
 /// Decodes the metadata for an imported blob from the provided bytes.
@@ -243,6 +243,12 @@ impl LoroDoc {
                 id.as_container_id(crate::ContainerType::Counter),
             )),
         })
+    }
+
+    pub fn get_container(&self, id: &ContainerID) -> Option<Arc<dyn ValueOrContainer>> {
+        self.doc
+            .get_container(id.clone().into())
+            .map(|c| Arc::new(loro::ValueOrContainer::Container(c)) as Arc<dyn ValueOrContainer>)
     }
 
     /// Commit the cumulative auto commit transaction.
