@@ -206,12 +206,31 @@ impl LoroDoc {
         })
     }
 
+    pub fn try_get_movable_list(
+        &self,
+        id: Arc<dyn ContainerIdLike>,
+    ) -> Option<Arc<LoroMovableList>> {
+        self.doc
+            .try_get_movable_list(loro::ContainerID::from(
+                id.as_container_id(crate::ContainerType::MovableList),
+            ))
+            .map(|inner| Arc::new(LoroMovableList { inner }))
+    }
+
     pub fn get_list(&self, id: Arc<dyn ContainerIdLike>) -> Arc<LoroList> {
         Arc::new(LoroList {
             inner: self.doc.get_list(loro::ContainerID::from(
                 id.as_container_id(crate::ContainerType::List),
             )),
         })
+    }
+
+    pub fn try_get_list(&self, id: Arc<dyn ContainerIdLike>) -> Option<Arc<LoroList>> {
+        self.doc
+            .try_get_list(loro::ContainerID::from(
+                id.as_container_id(crate::ContainerType::List),
+            ))
+            .map(|inner| Arc::new(LoroList { inner }))
     }
 
     pub fn get_map(&self, id: Arc<dyn ContainerIdLike>) -> Arc<LoroMap> {
@@ -222,12 +241,28 @@ impl LoroDoc {
         })
     }
 
+    pub fn try_get_map(&self, id: Arc<dyn ContainerIdLike>) -> Option<Arc<LoroMap>> {
+        self.doc
+            .try_get_map(loro::ContainerID::from(
+                id.as_container_id(crate::ContainerType::Map),
+            ))
+            .map(|inner| Arc::new(LoroMap { inner }))
+    }
+
     pub fn get_text(&self, id: Arc<dyn ContainerIdLike>) -> Arc<LoroText> {
         Arc::new(LoroText {
             inner: self.doc.get_text(loro::ContainerID::from(
                 id.as_container_id(crate::ContainerType::Text),
             )),
         })
+    }
+
+    pub fn try_get_text(&self, id: Arc<dyn ContainerIdLike>) -> Option<Arc<LoroText>> {
+        self.doc
+            .try_get_text(loro::ContainerID::from(
+                id.as_container_id(crate::ContainerType::Text),
+            ))
+            .map(|inner| Arc::new(LoroText { inner }))
     }
 
     pub fn get_tree(&self, id: Arc<dyn ContainerIdLike>) -> Arc<LoroTree> {
@@ -238,12 +273,28 @@ impl LoroDoc {
         })
     }
 
+    pub fn try_get_tree(&self, id: Arc<dyn ContainerIdLike>) -> Option<Arc<LoroTree>> {
+        self.doc
+            .try_get_tree(loro::ContainerID::from(
+                id.as_container_id(crate::ContainerType::Tree),
+            ))
+            .map(|inner| Arc::new(LoroTree { inner }))
+    }
+
     pub fn get_counter(&self, id: Arc<dyn ContainerIdLike>) -> Arc<LoroCounter> {
         Arc::new(LoroCounter {
             inner: self.doc.get_counter(loro::ContainerID::from(
                 id.as_container_id(crate::ContainerType::Counter),
             )),
         })
+    }
+
+    pub fn try_get_counter(&self, id: Arc<dyn ContainerIdLike>) -> Option<Arc<LoroCounter>> {
+        self.doc
+            .try_get_counter(loro::ContainerID::from(
+                id.as_container_id(crate::ContainerType::Counter),
+            ))
+            .map(|inner| Arc::new(LoroCounter { inner }))
     }
 
     pub fn get_container(&self, id: &ContainerID) -> Option<Arc<dyn ValueOrContainer>> {
@@ -1091,9 +1142,9 @@ impl From<ExportMode> for loro::ExportMode<'static> {
             ExportMode::ShallowSnapshot { frontiers } => {
                 loro::ExportMode::ShallowSnapshot(Cow::Owned(frontiers.as_ref().into()))
             }
-            ExportMode::StateOnly { frontiers } => loro::ExportMode::StateOnly(
-                frontiers.map(|x| Cow::Owned(x.as_ref().into())),
-            ),
+            ExportMode::StateOnly { frontiers } => {
+                loro::ExportMode::StateOnly(frontiers.map(|x| Cow::Owned(x.as_ref().into())))
+            }
             ExportMode::SnapshotAt { frontiers } => loro::ExportMode::SnapshotAt {
                 version: Cow::Owned(frontiers.as_ref().into()),
             },
