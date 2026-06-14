@@ -1052,6 +1052,19 @@ interface LoroMap{
     LoroCounter get_or_create_counter_container([ByRef] string key, LoroCounter child);
 
     [Throws=LoroError]
+    LoroList ensure_mergeable_list([ByRef] string key);
+    [Throws=LoroError]
+    LoroMap ensure_mergeable_map([ByRef] string key);
+    [Throws=LoroError]
+    LoroTree ensure_mergeable_tree([ByRef] string key);
+    [Throws=LoroError]
+    LoroMovableList ensure_mergeable_movable_list([ByRef] string key);
+    [Throws=LoroError]
+    LoroText ensure_mergeable_text([ByRef] string key);
+    [Throws=LoroError]
+    LoroCounter ensure_mergeable_counter([ByRef] string key);
+
+    [Throws=LoroError]
     LoroList insert_list_container([ByRef] string key, LoroList child);
     [Throws=LoroError]
     LoroMap insert_map_container([ByRef] string key, LoroMap child);
