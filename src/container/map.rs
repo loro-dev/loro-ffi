@@ -137,6 +137,39 @@ impl LoroMap {
         Ok(Arc::new(LoroCounter { inner: c }))
     }
 
+    pub fn ensure_mergeable_list(&self, key: &str) -> LoroResult<Arc<LoroList>> {
+        let c = self.inner.ensure_mergeable_list(key)?;
+        Ok(Arc::new(LoroList { inner: c }))
+    }
+
+    pub fn ensure_mergeable_map(&self, key: &str) -> LoroResult<Arc<LoroMap>> {
+        let c = self.inner.ensure_mergeable_map(key)?;
+        Ok(Arc::new(LoroMap { inner: c }))
+    }
+
+    pub fn ensure_mergeable_tree(&self, key: &str) -> LoroResult<Arc<LoroTree>> {
+        let c = self.inner.ensure_mergeable_tree(key)?;
+        Ok(Arc::new(LoroTree { inner: c }))
+    }
+
+    pub fn ensure_mergeable_movable_list(
+        &self,
+        key: &str,
+    ) -> LoroResult<Arc<LoroMovableList>> {
+        let c = self.inner.ensure_mergeable_movable_list(key)?;
+        Ok(Arc::new(LoroMovableList { inner: c }))
+    }
+
+    pub fn ensure_mergeable_text(&self, key: &str) -> LoroResult<Arc<LoroText>> {
+        let c = self.inner.ensure_mergeable_text(key)?;
+        Ok(Arc::new(LoroText { inner: c }))
+    }
+
+    pub fn ensure_mergeable_counter(&self, key: &str) -> LoroResult<Arc<LoroCounter>> {
+        let c = self.inner.ensure_mergeable_counter(key)?;
+        Ok(Arc::new(LoroCounter { inner: c }))
+    }
+
     #[inline]
     pub fn insert_list_container(
         &self,
