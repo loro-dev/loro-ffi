@@ -76,6 +76,7 @@ impl LoroMap {
         key: &str,
         text: Arc<LoroText>,
     ) -> LoroResult<Arc<LoroText>> {
+        #[allow(deprecated)]
         let c = self
             .inner
             .get_or_create_container(key, text.as_ref().clone().inner)?;
@@ -87,6 +88,7 @@ impl LoroMap {
         key: &str,
         map: Arc<LoroMap>,
     ) -> LoroResult<Arc<LoroMap>> {
+        #[allow(deprecated)]
         let c = self
             .inner
             .get_or_create_container(key, map.as_ref().clone().inner)?;
@@ -98,6 +100,7 @@ impl LoroMap {
         key: &str,
         tree: Arc<LoroTree>,
     ) -> LoroResult<Arc<LoroTree>> {
+        #[allow(deprecated)]
         let c = self
             .inner
             .get_or_create_container(key, tree.as_ref().clone().inner)?;
@@ -109,6 +112,7 @@ impl LoroMap {
         key: &str,
         list: Arc<LoroList>,
     ) -> LoroResult<Arc<LoroList>> {
+        #[allow(deprecated)]
         let c = self
             .inner
             .get_or_create_container(key, list.as_ref().clone().inner)?;
@@ -120,6 +124,7 @@ impl LoroMap {
         key: &str,
         list: Arc<LoroMovableList>,
     ) -> LoroResult<Arc<LoroMovableList>> {
+        #[allow(deprecated)]
         let c = self
             .inner
             .get_or_create_container(key, list.as_ref().clone().inner)?;
@@ -131,6 +136,7 @@ impl LoroMap {
         key: &str,
         counter: Arc<LoroCounter>,
     ) -> LoroResult<Arc<LoroCounter>> {
+        #[allow(deprecated)]
         let c = self
             .inner
             .get_or_create_container(key, counter.as_ref().clone().inner)?;
@@ -152,10 +158,7 @@ impl LoroMap {
         Ok(Arc::new(LoroTree { inner: c }))
     }
 
-    pub fn ensure_mergeable_movable_list(
-        &self,
-        key: &str,
-    ) -> LoroResult<Arc<LoroMovableList>> {
+    pub fn ensure_mergeable_movable_list(&self, key: &str) -> LoroResult<Arc<LoroMovableList>> {
         let c = self.inner.ensure_mergeable_movable_list(key)?;
         Ok(Arc::new(LoroMovableList { inner: c }))
     }
@@ -291,5 +294,69 @@ impl LoroMap {
 impl Default for LoroMap {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use crate::{ContainerIdLike, LoroValue};
+
+    use super::*;
+
+    struct TestValue(LoroValue);
+
+    impl LoroValueLike for TestValue {
+        fn as_loro_value(&self) -> LoroValue {
+            self.0.clone()
+        }
+    }
+
+    fn value(value: LoroValue) -> Arc<dyn LoroValueLike> {
+        Arc::new(TestValue(value))
+    }
+
+    fn root_map() -> Arc<LoroMap> {
+        let doc = LoroDoc::new();
+        doc.get_map(Arc::new(String::from("root")) as Arc<dyn ContainerIdLike>)
+    }
+
+    #[test]
+    fn ensure_mergeable_containers_are_stable_and_usable() {
+        let root = root_map();
+
+        let text = root.ensure_mergeable_text("body").unwrap();
+        text.insert(0, "hello").unwrap();
+        let same_text = root.ensure_mergeable_text("body").unwrap();
+        assert_eq!(format!("{:?}", text.id()), format!("{:?}", same_text.id()));
+        assert_eq!(same_text.slice(0, 5).unwrap(), "hello");
+
+        let map = root.ensure_mergeable_map("meta").unwrap();
+        map.insert(
+            "name",
+            value(LoroValue::String {
+                value: String::from("Ada"),
+            }),
+        )
+        .unwrap();
+        assert!(map.get("name").unwrap().is_value());
+
+        let list = root.ensure_mergeable_list("items").unwrap();
+        list.push(value(LoroValue::I64 { value: 42 })).unwrap();
+        assert_eq!(list.len(), 1);
+
+        let counter = root.ensure_mergeable_counter("revision").unwrap();
+        counter.increment(2.0).unwrap();
+        assert_eq!(counter.get_value(), 2.0);
+    }
+
+    #[test]
+    fn ensure_mergeable_rejects_non_mergeable_value() {
+        let root = root_map();
+        root.insert("plain", value(LoroValue::I64 { value: 1 }))
+            .unwrap();
+
+        assert!(root.ensure_mergeable_map("plain").is_err());
     }
 }
