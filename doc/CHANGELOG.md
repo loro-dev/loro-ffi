@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## v1.17.1
 
 - add `LoroDoc::export_pending_updates` as a thin wrapper around the core method,
   returning optional bytes and throwing `LoroEncodeError`; absent bytes mean no
@@ -12,7 +12,7 @@
 - document saving and restoring a consistent snapshot and pending-updates pair;
   export preserves pending operations without committing local edits or advancing
   the applied version vector
-- use the published `loro` 1.17.0 registry dependency and lockfile instead of the
+- use the published `loro` 1.17.1 registry dependency and lockfile instead of the
   temporary core review Git pin; this includes the pending-update API and the
   previously published `loro-v1.16.2` fixes without requiring a local core checkout
 - retain legacy JSON export schemas and signatures across the core upgrade;

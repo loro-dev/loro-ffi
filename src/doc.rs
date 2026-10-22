@@ -550,12 +550,7 @@ impl LoroDoc {
     }
 
     pub fn state_vv(&self) -> Arc<VersionVector> {
-        Arc::new(
-            self.doc
-                .state_vv()
-                .expect("state_vv: unreadable document history")
-                .into(),
-        )
+        Arc::new(self.doc.state_vv().into())
     }
 
     /// Get the `VersionVector` of the start of the shallow history
