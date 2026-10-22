@@ -331,11 +331,13 @@ interface LoroDoc{
     /// synchronized with the latest version of the [loro_internal::OpLog].
     boolean is_detached();
 
-    /// Import updates/snapshot exported by [`LoroDoc::export_snapshot`] or [`LoroDoc::export_from`].
+    /// Import a snapshot, ordinary updates, or bytes from `export_pending_updates`.
+    /// Pending updates still wait for their actual missing causal dependencies.
     [Throws=LoroError]
     ImportStatus import([ByRef]bytes bytes);
 
-    /// Import updates/snapshot exported by [`LoroDoc::export_snapshot`] or [`LoroDoc::export_from`].
+    /// Import a snapshot, ordinary updates, or bytes from `export_pending_updates`.
+    /// Pending updates still wait for their actual missing causal dependencies.
     ///
     /// It marks the import with a custom `origin` string. It can be used to track the import source
     /// in the generated events.
@@ -348,11 +350,45 @@ interface LoroDoc{
     /// Export the current state with json-string format of the document.
     string export_json_updates([ByRef]VersionVector start_vv, [ByRef]VersionVector end_vv);
 
-    /// Export all the ops not included in the given `VersionVector`
+    /// Export JSON updates, reporting unreadable history as LoroError.
+    [Throws=LoroError]
+    string try_export_json_updates([ByRef]VersionVector start_vv, [ByRef]VersionVector end_vv);
+
+    /// Export all applied ops not included in the given `VersionVector`.
+    /// Remote updates waiting for missing dependencies are excluded; save them
+    /// separately with `export_pending_updates`.
     [Throws=LoroEncodeError]
     bytes export_updates([ByRef] VersionVector vv);
 
+    /// Export imported remote updates waiting for missing causal dependencies.
+    ///
+    /// These are received remote operations, not uncommitted local transactions.
+    /// Returns native nil/None when none remain pending, not empty bytes, or bytes
+    /// in the ordinary updates format. The bytes preserve the pending operations,
+    /// not necessarily the original blob.
+    ///
+    /// This is read-only: it does not consume pending updates, commit local edits,
+    /// emit events, or advance the applied version vector/frontiers. Ordinary
+    /// snapshot/update exports exclude these updates; snapshot export still
+    /// commits local edits as usual.
+    ///
+    /// Prevent mutations/imports between exporting a snapshot and these bytes:
+    /// the calls are not an atomic pair. Save or replace both as one consistent
+    /// checkpoint, only after both exports succeed. nil/None must clear any older
+    /// pending record; an export error must not replace the previous checkpoint.
+    /// Encoding failures, including `LoroEncodeError.InternalError`, are thrown
+    /// with the core's error message rather than returned as absent bytes.
+    ///
+    /// Restore the snapshot first, then pass any pending bytes to ordinary `import`.
+    /// They remain pending until the real missing dependencies arrive. This API
+    /// does not fetch or invent those dependencies, establish that the document
+    /// is synced, or make advancing a transport cursor or compaction safe.
+    [Throws=LoroEncodeError]
+    bytes? export_pending_updates();
+
     /// Export the current state and history of the document.
+    /// Remote updates waiting for missing dependencies are excluded; save them
+    /// separately with `export_pending_updates`. This export commits local edits.
     [Throws=LoroEncodeError]
     bytes export_snapshot();
 
@@ -613,6 +649,10 @@ interface LoroDoc{
     /// Compared to [`export_json_updates`], this method does not compress the peer IDs in the updates.
     /// So the operations are easier to be processed by application code.
     string export_json_updates_without_peer_compression([ByRef] VersionVector start_vv, [ByRef] VersionVector end_vv);
+
+    /// Export JSON updates without peer compression, reporting unreadable history as LoroError.
+    [Throws=LoroError]
+    string try_export_json_updates_without_peer_compression([ByRef] VersionVector start_vv, [ByRef] VersionVector end_vv);
 
     /// Exports changes within the specified ID span to JSON schema format.
     ///
@@ -2160,11 +2200,12 @@ enum LoroError {
     "UndoGroupAlreadyStarted",
 };
 
-[Error, Remote]
+[Error, NonExhaustive, Remote]
 enum CannotFindRelativePosition{
     "ContainerDeleted",
     "HistoryCleared",
-    "IdNotFound"
+    "IdNotFound",
+    "HistoryUnreadable",
 };
 
 [Error, Remote]
@@ -2178,12 +2219,15 @@ enum LoroEncodeError{
     "FrontiersNotFound",
     "ShallowSnapshotIncompatibleWithOldFormat",
     "UnknownContainer",
+    "InternalError",
+    "DecodeError",
 };
 
-[Error, Remote]
+[Error, NonExhaustive, Remote]
 enum ChangeTravelError{
     "TargetIdNotFound",
-    "TargetVersionNotIncluded"
+    "TargetVersionNotIncluded",
+    "HistoryUnreadable",
 };
 
 [Error, Remote]

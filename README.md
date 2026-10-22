@@ -24,6 +24,66 @@ JSONPath tooling now includes `subscribe_jsonpath`, a lightweight notification h
 
 You can find the updates [here](./doc/CHANGELOG.md)
 
+## Persisting pending imported updates
+
+`LoroDoc::export_pending_updates()` exports remote operations that were imported but
+cannot yet be applied because causal dependencies are missing. These are different
+from local edits in an uncommitted transaction. Ordinary snapshot and update exports
+do not preserve these pending operations.
+
+The Rust return type is `Result<Option<Vec<u8>>, LoroEncodeError>`; the UniFFI
+declaration is `[Throws=LoroEncodeError] bytes? export_pending_updates()`.
+Generated bindings return Swift `Data?` and Python `typing.Optional[bytes]`.
+`None` (native `nil`/`None`) means there are no pending operations; it is not an
+empty byte array. The method does not consume pending operations, commit local
+edits, or advance the applied version vector.
+
+Encoding failures are thrown as `LoroEncodeError`, including `InternalError`.
+Swift receives `LoroEncodeError.InternalError(message:)`; Python receives
+`LoroEncodeError.InternalError`. Both preserve the core's display message.
+An encoding error is distinct from an absent pending result.
+
+To preserve a checkpoint, export both a snapshot and pending updates without
+allowing edits or imports between the exports, then save the pair atomically. If
+pending updates are absent, clear any previously stored pending bytes. If either
+export fails, keep the previous complete checkpoint. Restore by importing the
+snapshot and, when present, the pending bytes through the ordinary `import`
+method. The restored pending operations still wait for the actual missing
+dependencies; for example, importing B without its dependency A, saving and
+restoring, then importing A applies both A and B. Saving pending bytes does not
+establish that a document is synced or that a sync cursor can be advanced or
+history compacted.
+
+The default dependency uses the published [Loro 1.17.0 crate](https://crates.io/crates/loro/1.17.0),
+which includes this API and the previously published `loro-v1.16.2` fixes. The
+checked-in lockfile resolves the registry release, so validation needs no local
+core checkout or unpublished Git revision. This does not publish an FFI release;
+the FFI package and generated language packages still need their own releases.
+
+To validate the locked dependency and generated bindings, run:
+
+```bash
+python3 scripts/verify-pending-updates.py
+```
+
+Add `--offline` to use cached Cargo dependencies. The script makes an isolated
+copy with `cdylib` output while preserving the default dependency and lockfile. It
+runs the Rust tests, generates Swift and Python bindings, and runs the Python
+recovery and error tests. On macOS with `swiftc`, it also runs the Swift recovery
+and error tests. Set `CARGO_TARGET_DIR` to reuse a build cache. The temporary copy
+and generated artifacts remain available for inspection at the printed path.
+
+The dependency update preserves the legacy JSON export and `state_vv` signatures.
+Legacy JSON exports still return the JSON schema directly and panic on unreadable
+history. Use `try_export_json_updates` or
+`try_export_json_updates_without_peer_compression` to receive a typed `LoroError`
+instead. The binding also maps the current core decode and unreadable-history
+error variants without changing the existing error tags.
+
+For development against a different core checkout, pass its workspace path as
+an optional argument. This changes the dependency only in the temporary copy and
+validates that local checkout instead of the checked-in core revision.
+
 ## Build Binding
 
 Read the UniFFI [documentation](https://mozilla.github.io/uniffi-rs/) and modify the [uniffi.toml](./uniffi.toml) configuration in this repository as needed.
