@@ -54,13 +54,11 @@ restoring, then importing A applies both A and B. Saving pending bytes does not
 establish that a document is synced or that a sync cursor can be advanced or
 history compacted.
 
-The default dependency is pinned to the [core review commit](https://github.com/loro-dev/loro/commit/ed71753b7a689eb77097b54102b8e20b92444ef6)
-that adds this API on top of current core `main`, including the published
-`loro-v1.16.2` baseline and its fixes. The checked-in lockfile uses that exact
-revision and retains `loro` and `loro-internal` version `1.16.2`, so another
-machine can build and review this change without a local core checkout. Replace
-this review dependency with a released core version containing the API before
-publishing an FFI release; coordinate that dependency update with the core change.
+The default dependency uses the published [Loro 1.17.0 crate](https://crates.io/crates/loro/1.17.0),
+which includes this API and the previously published `loro-v1.16.2` fixes. The
+checked-in lockfile resolves the registry release, so validation needs no local
+core checkout or unpublished Git revision. This does not publish an FFI release;
+the FFI package and generated language packages still need their own releases.
 
 To validate the locked dependency and generated bindings, run:
 

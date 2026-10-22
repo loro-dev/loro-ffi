@@ -12,11 +12,9 @@
 - document saving and restoring a consistent snapshot and pending-updates pair;
   export preserves pending operations without committing local edits or advancing
   the applied version vector
-- pin the default dependency to core review commit
-  `ed71753b7a689eb77097b54102b8e20b92444ef6` so the API builds on other
-  machines; the pin contains the published `loro-v1.16.2` baseline and retains
-  `loro`/`loro-internal` version `1.16.2`; replace this review dependency with a
-  released core version before publishing, coordinated with the core change
+- use the published `loro` 1.17.0 registry dependency and lockfile instead of the
+  temporary core review Git pin; this includes the pending-update API and the
+  previously published `loro-v1.16.2` fixes without requiring a local core checkout
 - retain legacy JSON export schemas and signatures across the core upgrade;
   add fallible `try_export_json_updates` and
   `try_export_json_updates_without_peer_compression` alternatives, and map
