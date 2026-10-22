@@ -54,11 +54,11 @@ restoring, then importing A applies both A and B. Saving pending bytes does not
 establish that a document is synced or that a sync cursor can be advanced or
 history compacted.
 
-The default dependency uses the published [Loro 1.17.0 crate](https://crates.io/crates/loro/1.17.0),
+The default dependency uses the published [Loro 1.17.1 crate](https://crates.io/crates/loro/1.17.1),
 which includes this API and the previously published `loro-v1.16.2` fixes. The
 checked-in lockfile resolves the registry release, so validation needs no local
-core checkout or unpublished Git revision. This does not publish an FFI release;
-the FFI package and generated language packages still need their own releases.
+core checkout or unpublished Git revision. The FFI package and generated language packages are versioned and published
+separately from the core.
 
 To validate the locked dependency and generated bindings, run:
 
