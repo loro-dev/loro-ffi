@@ -169,6 +169,92 @@ private func encodingError(_ localEdits: Bool) throws {
     }
 }
 
+private func jsonExportCompatibility() throws {
+    let source = LoroDoc()
+    try source.setPeerId(peer: 1)
+    try text(source).pushStr(s: "published JSON")
+    source.commit()
+    let start = VersionVector()
+    let end = source.oplogVv()
+    // The first two calls intentionally have no try: legacy signatures stay exact.
+    let payloads = [
+        source.exportJsonUpdates(startVv: start, endVv: end),
+        source.exportJsonUpdatesWithoutPeerCompression(startVv: start, endVv: end),
+        try source.tryExportJsonUpdates(startVv: start, endVv: end),
+        try source.tryExportJsonUpdatesWithoutPeerCompression(startVv: start, endVv: end),
+    ]
+    for payload in payloads {
+        let schema = try JSONSerialization.jsonObject(with: Data(payload.utf8)) as! [String: Any]
+        expect(schema["schema_version"] as? Int == 1, "JSON must remain the direct published schema")
+        let restored = LoroDoc()
+        _ = try restored.importJsonUpdates(json: payload)
+        expect(text(restored).description == "published JSON", "exported schema must import successfully")
+        expect(restored.oplogVv().eq(other: end), "JSON round-trip must retain applied history")
+    }
+}
+
+private func unreadableHistoryErrors() throws {
+    let directory = ProcessInfo.processInfo.environment["LORO_FFI_TEST_FIXTURES"]!
+    let snapshot = try Data(contentsOf: URL(fileURLWithPath: directory).appendingPathComponent("unparsable-history.snapshot.bin"))
+    let doc = LoroDoc()
+    _ = try doc.`import`(bytes: snapshot)
+    let before = doc.oplogFrontiers().encode()
+    do {
+        _ = try doc.exportSnapshotAt(frontiers: Frontiers.fromId(id: Id(peer: 1, counter: 1)))
+        preconditionFailure("unreadable snapshot-at must throw")
+    } catch LoroEncodeError.DecodeError(let message) {
+        expect(message.contains("cannot parse change block"), "typed encoding error must preserve its message")
+    }
+    let start = VersionVector()
+    start.setEnd(id: Id(peer: 1, counter: 2))
+    start.setEnd(id: Id(peer: 2, counter: 1))
+    for export in [doc.tryExportJsonUpdates, doc.tryExportJsonUpdatesWithoutPeerCompression] {
+        do {
+            _ = try export(start, doc.oplogVv())
+            preconditionFailure("unreadable JSON history must throw")
+        } catch LoroError.DecodeError(let message) {
+            expect(message.contains("cannot parse change block"), "typed JSON error must preserve its message")
+        }
+    }
+    expect(doc.oplogFrontiers().encode() == before, "failed read must preserve oplog frontiers")
+    expect(doc.stateFrontiers().encode() == before, "failed read must preserve state frontiers")
+    expect(!doc.isDetached(), "failed read must preserve attached state")
+}
+
+private struct LoweredError: Decodable {
+    let error_type: String
+    let variant: String
+    let bytes: [UInt8]
+    let message: String
+}
+
+private func generatedErrorLifting() throws {
+    let path = ProcessInfo.processInfo.environment["LORO_FFI_ERROR_FIXTURE"]!
+    let records = try JSONDecoder().decode([LoweredError].self, from: Data(contentsOf: URL(fileURLWithPath: path)))
+    expect(records.count == 4, "Rust must produce each error-lowering fixture")
+    for record in records {
+        // Read bytes from actual Rust LowerError output through the generated Swift converter.
+        var buffer = (data: Data(record.bytes), offset: Data.Index(0))
+        switch (record.error_type, record.variant) {
+        case ("LoroEncodeError", "InternalError"):
+            let error = try FfiConverterTypeLoroEncodeError.read(from: &buffer)
+            expect(error == .InternalError(message: record.message), "existing tag must remain InternalError")
+        case ("LoroEncodeError", "DecodeError"):
+            let error = try FfiConverterTypeLoroEncodeError.read(from: &buffer)
+            expect(error == .DecodeError(message: record.message), "new encoding error must remain typed")
+        case ("CannotFindRelativePosition", "HistoryUnreadable"):
+            let error = try FfiConverterTypeCannotFindRelativePosition.read(from: &buffer)
+            expect(error == .HistoryUnreadable(message: record.message), "new cursor error must remain typed")
+        case ("ChangeTravelError", "HistoryUnreadable"):
+            let error = try FfiConverterTypeChangeTravelError.read(from: &buffer)
+            expect(error == .HistoryUnreadable(message: record.message), "new travel error must remain typed")
+        default:
+            preconditionFailure("unexpected Rust-lowered fixture")
+        }
+        expect(buffer.offset == buffer.data.count, "converter must consume the complete error buffer")
+    }
+}
+
 @main
 private enum PendingUpdatesBindingTests {
     static func main() throws {
@@ -177,6 +263,9 @@ private enum PendingUpdatesBindingTests {
         try uncommittedTransaction()
         try encodingError(false)
         try encodingError(true)
+        try jsonExportCompatibility()
+        try unreadableHistoryErrors()
+        try generatedErrorLifting()
         print("Swift pending updates binding tests passed")
     }
 }

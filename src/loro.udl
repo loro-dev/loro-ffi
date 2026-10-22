@@ -350,6 +350,10 @@ interface LoroDoc{
     /// Export the current state with json-string format of the document.
     string export_json_updates([ByRef]VersionVector start_vv, [ByRef]VersionVector end_vv);
 
+    /// Export JSON updates, reporting unreadable history as LoroError.
+    [Throws=LoroError]
+    string try_export_json_updates([ByRef]VersionVector start_vv, [ByRef]VersionVector end_vv);
+
     /// Export all applied ops not included in the given `VersionVector`.
     /// Remote updates waiting for missing dependencies are excluded; save them
     /// separately with `export_pending_updates`.
@@ -645,6 +649,10 @@ interface LoroDoc{
     /// Compared to [`export_json_updates`], this method does not compress the peer IDs in the updates.
     /// So the operations are easier to be processed by application code.
     string export_json_updates_without_peer_compression([ByRef] VersionVector start_vv, [ByRef] VersionVector end_vv);
+
+    /// Export JSON updates without peer compression, reporting unreadable history as LoroError.
+    [Throws=LoroError]
+    string try_export_json_updates_without_peer_compression([ByRef] VersionVector start_vv, [ByRef] VersionVector end_vv);
 
     /// Exports changes within the specified ID span to JSON schema format.
     ///
@@ -2192,11 +2200,12 @@ enum LoroError {
     "UndoGroupAlreadyStarted",
 };
 
-[Error, Remote]
+[Error, NonExhaustive, Remote]
 enum CannotFindRelativePosition{
     "ContainerDeleted",
     "HistoryCleared",
-    "IdNotFound"
+    "IdNotFound",
+    "HistoryUnreadable",
 };
 
 [Error, Remote]
@@ -2211,12 +2220,14 @@ enum LoroEncodeError{
     "ShallowSnapshotIncompatibleWithOldFormat",
     "UnknownContainer",
     "InternalError",
+    "DecodeError",
 };
 
-[Error, Remote]
+[Error, NonExhaustive, Remote]
 enum ChangeTravelError{
     "TargetIdNotFound",
-    "TargetVersionNotIncluded"
+    "TargetVersionNotIncluded",
+    "HistoryUnreadable",
 };
 
 [Error, Remote]

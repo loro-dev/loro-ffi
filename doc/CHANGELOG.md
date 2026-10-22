@@ -13,9 +13,17 @@
   export preserves pending operations without committing local edits or advancing
   the applied version vector
 - pin the default dependency to core review commit
-  `c48e4c7e7a2faa3753723b721eb3b82b09406055` so the API builds on other
-  machines; replace this review dependency with a released core version before
-  publishing, coordinated with the core change
+  `ed71753b7a689eb77097b54102b8e20b92444ef6` so the API builds on other
+  machines; the pin contains the published `loro-v1.16.2` baseline and retains
+  `loro`/`loro-internal` version `1.16.2`; replace this review dependency with a
+  released core version before publishing, coordinated with the core change
+- retain legacy JSON export schemas and signatures across the core upgrade;
+  add fallible `try_export_json_updates` and
+  `try_export_json_updates_without_peer_compression` alternatives, and map
+  `LoroEncodeError::DecodeError` plus unreadable-history cursor/travel errors
+  while retaining the existing error tags
+- cover released deleted-container history retention through the public FFI,
+  and validate JSON compatibility and real generated error lowering/lifting
 - add an isolated validation script that preserves the locked dependency by
   default, with an optional local-core override for development
 

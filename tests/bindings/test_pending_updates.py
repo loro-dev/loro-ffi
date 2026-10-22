@@ -4,6 +4,10 @@ Run with the generated module and native library together on PYTHONPATH:
     PYTHONPATH=<generated-python-directory> python3 tests/bindings/test_pending_updates.py
 """
 
+import ctypes
+import json
+import os
+from pathlib import Path
 import typing
 import unittest
 
@@ -183,6 +187,69 @@ class PendingUpdatesBindingTests(unittest.TestCase):
 
     def test_encoding_error_is_typed_and_preserves_local_transaction(self):
         self.assert_encoding_error_preserves_state(local_edits=True)
+
+
+    def test_legacy_and_fallible_json_exports_keep_the_published_schema(self):
+        source = loro.LoroDoc()
+        source.set_peer_id(1)
+        text(source).push_str("published JSON")
+        source.commit()
+        start = loro.VersionVector()
+        end = source.oplog_vv()
+        for export in (
+            source.export_json_updates,
+            source.export_json_updates_without_peer_compression,
+            source.try_export_json_updates,
+            source.try_export_json_updates_without_peer_compression,
+        ):
+            with self.subTest(export=export.__name__):
+                payload = export(start, end)
+                self.assertEqual(json.loads(payload)["schema_version"], 1)
+                restored = loro.LoroDoc()
+                restored.import_json_updates(payload)
+                self.assertEqual(str(text(restored)), "published JSON")
+                self.assertTrue(restored.oplog_vv().eq(end))
+
+    def test_unreadable_history_throws_typed_decode_errors(self):
+        fixture = Path(__file__).resolve().parents[1] / "fixtures/unparsable-history.snapshot.bin"
+        doc = loro.LoroDoc()
+        doc._import(fixture.read_bytes())
+        before = doc.oplog_frontiers().encode()
+        with self.assertRaises(loro.LoroEncodeError.DecodeError) as caught:
+            doc.export_snapshot_at(loro.Frontiers.from_id(loro.Id(peer=1, counter=1)))
+        self.assertIn("cannot parse change block", str(caught.exception))
+        start = loro.VersionVector()
+        start.set_end(loro.Id(peer=1, counter=2))
+        start.set_end(loro.Id(peer=2, counter=1))
+        for export in (doc.try_export_json_updates, doc.try_export_json_updates_without_peer_compression):
+            with self.subTest(export=export.__name__):
+                with self.assertRaises(loro.LoroError.DecodeError) as caught:
+                    export(start, doc.oplog_vv())
+                self.assertIn("cannot parse change block", str(caught.exception))
+        self.assertEqual(doc.oplog_frontiers().encode(), before)
+        self.assertEqual(doc.state_frontiers().encode(), before)
+        self.assertFalse(doc.is_detached())
+
+    @unittest.skipUnless(os.environ.get("LORO_FFI_ERROR_FIXTURE"), "run the verification script for Rust-lowered fixtures")
+    def test_generated_converters_lift_actual_rust_error_buffers(self):
+        # These buffers were produced by the actual generated Rust LowerError
+        # implementations, not by constructing a matching foreign error object.
+        records = json.loads(Path(os.environ["LORO_FFI_ERROR_FIXTURE"]).read_text())
+        self.assertEqual(len(records), 4)
+        converters = {
+            "LoroEncodeError": loro._UniffiFfiConverterTypeLoroEncodeError,
+            "CannotFindRelativePosition": loro._UniffiFfiConverterTypeCannotFindRelativePosition,
+            "ChangeTravelError": loro._UniffiFfiConverterTypeChangeTravelError,
+        }
+        for record in records:
+            with self.subTest(error=record["error_type"], variant=record["variant"]):
+                payload = bytes(record["bytes"])
+                buffer = loro._UniffiRustBuffer.alloc(len(payload))
+                ctypes.memmove(buffer.data, payload, len(payload))
+                error = converters[record["error_type"]].lift(buffer)
+                expected = getattr(getattr(loro, record["error_type"]), record["variant"])
+                self.assertIsInstance(error, expected)
+                self.assertEqual(str(error), record["message"])
 
 
 if __name__ == "__main__":

@@ -389,10 +389,21 @@ impl LoroDoc {
     /// Export the current state with json-string format of the document.
     #[inline]
     pub fn export_json_updates(&self, start_vv: &VersionVector, end_vv: &VersionVector) -> String {
+        self.try_export_json_updates(start_vv, end_vv)
+            .expect("export_json_updates: unreadable document history")
+    }
+
+    /// Export JSON updates, reporting unreadable history as [`LoroError`].
+    /// The legacy method keeps its infallible signature and panics on that error.
+    pub fn try_export_json_updates(
+        &self,
+        start_vv: &VersionVector,
+        end_vv: &VersionVector,
+    ) -> Result<String, LoroError> {
         let json = self
             .doc
-            .export_json_updates(&start_vv.into(), &end_vv.into());
-        serde_json::to_string(&json).unwrap()
+            .export_json_updates(&start_vv.into(), &end_vv.into())?;
+        Ok(serde_json::to_string(&json).unwrap())
     }
 
     /// Export the current state with json-string format of the document, without peer compression.
@@ -405,12 +416,21 @@ impl LoroDoc {
         start_vv: &VersionVector,
         end_vv: &VersionVector,
     ) -> String {
-        serde_json::to_string(
-            &self
-                .doc
-                .export_json_updates_without_peer_compression(&start_vv.into(), &end_vv.into()),
-        )
-        .unwrap()
+        self.try_export_json_updates_without_peer_compression(start_vv, end_vv)
+            .expect("export_json_updates_without_peer_compression: unreadable document history")
+    }
+
+    /// Export JSON updates without peer compression, reporting unreadable history.
+    /// The legacy method keeps its infallible signature and panics on that error.
+    pub fn try_export_json_updates_without_peer_compression(
+        &self,
+        start_vv: &VersionVector,
+        end_vv: &VersionVector,
+    ) -> Result<String, LoroError> {
+        let json = self
+            .doc
+            .export_json_updates_without_peer_compression(&start_vv.into(), &end_vv.into())?;
+        Ok(serde_json::to_string(&json).unwrap())
     }
 
     /// Redacts sensitive content in JSON updates within the specified version range.
@@ -530,7 +550,12 @@ impl LoroDoc {
     }
 
     pub fn state_vv(&self) -> Arc<VersionVector> {
-        Arc::new(self.doc.state_vv().into())
+        Arc::new(
+            self.doc
+                .state_vv()
+                .expect("state_vv: unreadable document history")
+                .into(),
+        )
     }
 
     /// Get the `VersionVector` of the start of the shallow history

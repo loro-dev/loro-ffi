@@ -1,6 +1,9 @@
 use std::{collections::HashMap, sync::Arc};
 
-use loro_ffi::{LoroDoc, LoroEncodeError, LoroText, VersionVector};
+use loro_ffi::{
+    Frontiers, LoroDoc, LoroEncodeError, LoroMap, LoroMovableList, LoroText, LoroValue,
+    LoroValueLike, VersionVector,
+};
 
 fn text(doc: &LoroDoc, name: &str) -> Arc<LoroText> {
     doc.get_text(Arc::new(name.to_owned()))
@@ -250,5 +253,167 @@ fn unrepresentable_pending_lamport_returns_internal_error_without_mutation() {
         assert!(receiver.oplog_vv().to_hashmap().is_empty());
         assert!(receiver.state_vv().to_hashmap().is_empty());
         assert_eq!(receiver.get_pending_txn_len(), 0);
+    }
+}
+
+#[test]
+fn snapshot_at_preserves_released_deleted_container_history() {
+    // Public FFI adaptation of core PR #1107 / issue #1106: a snapshot at a
+    // version after deleting a parent must retain the child's earlier history.
+    // This guards the published baseline when updating the core dependency.
+    struct ResourcePath;
+    impl LoroValueLike for ResourcePath {
+        fn as_loro_value(&self) -> LoroValue {
+            LoroValue::String {
+                value: "/resources".to_owned(),
+            }
+        }
+    }
+
+    let source = LoroDoc::new();
+    source.set_peer_id(1).unwrap();
+    let root = source.get_map(Arc::new("root".to_owned()));
+    let parent = root
+        .insert_map_container("parent", Arc::new(LoroMap::new()))
+        .unwrap();
+    let read = parent
+        .insert_movable_list_container("read", Arc::new(LoroMovableList::new()))
+        .unwrap();
+    read.insert(0, Arc::new(ResourcePath)).unwrap();
+    source.commit();
+    let seeded = source.oplog_frontiers();
+
+    source.set_peer_id(2).unwrap();
+    root.delete("parent").unwrap();
+    source.commit();
+    let deleted = source.oplog_frontiers();
+    let snapshot = source.export_snapshot_at(&deleted).unwrap();
+    assert!(root.get("parent").is_none());
+    assert_eq!(source.state_frontiers().encode(), deleted.encode());
+    assert!(!source.is_detached());
+
+    let restored = LoroDoc::new();
+    restored.import(&snapshot).unwrap();
+    let restored_root = restored.get_map(Arc::new("root".to_owned()));
+    assert!(restored_root.get("parent").is_none());
+    assert_eq!(restored.oplog_frontiers().encode(), deleted.encode());
+    restored.diff(&Frontiers::new(), &seeded).unwrap();
+    restored.checkout(&seeded).unwrap();
+    let restored_parent = restored_root.get("parent").unwrap().as_loro_map().unwrap();
+    let restored_read = restored_parent
+        .get("read")
+        .unwrap()
+        .as_loro_movable_list()
+        .unwrap();
+    assert_eq!(restored_read.len(), 1);
+    assert!(matches!(
+        restored_read.get(0).unwrap().as_value().unwrap(),
+        LoroValue::String { value } if value == "/resources"
+    ));
+    restored.checkout(&deleted).unwrap();
+    assert!(restored_root.get("parent").is_none());
+}
+
+#[test]
+fn legacy_and_fallible_json_exports_keep_the_published_schema() {
+    let source = LoroDoc::new();
+    source.set_peer_id(1).unwrap();
+    text(&source, "text").insert(0, "published JSON").unwrap();
+    source.commit();
+    let start = VersionVector::new();
+    let end = source.oplog_vv();
+    for json in [
+        source.export_json_updates(&start, &end),
+        source.export_json_updates_without_peer_compression(&start, &end),
+        source.try_export_json_updates(&start, &end).unwrap(),
+        source
+            .try_export_json_updates_without_peer_compression(&start, &end)
+            .unwrap(),
+    ] {
+        let schema: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert_eq!(schema["schema_version"], 1);
+        let restored = LoroDoc::new();
+        restored.import_json_updates(&json).unwrap();
+        assert_eq!(text(&restored, "text").to_string(), "published JSON");
+        assert_eq!(restored.oplog_vv().to_hashmap(), end.to_hashmap());
+    }
+}
+
+#[test]
+fn unreadable_history_returns_typed_export_errors_without_advancing() {
+    use loro_ffi::{LoroError, ID};
+    let doc = LoroDoc::new();
+    doc.import(include_bytes!("fixtures/unparsable-history.snapshot.bin"))
+        .unwrap();
+    let before = doc.oplog_frontiers().encode();
+    assert!(matches!(
+        doc.export_snapshot_at(&Frontiers::from_id(ID::new(1, 1))),
+        Err(LoroEncodeError::DecodeError(_))
+    ));
+    let start = VersionVector::new();
+    start.set_end(ID::new(1, 2));
+    start.set_end(ID::new(2, 1));
+    for result in [
+        doc.try_export_json_updates(&start, &doc.oplog_vv()),
+        doc.try_export_json_updates_without_peer_compression(&start, &doc.oplog_vv()),
+    ] {
+        assert!(matches!(result, Err(LoroError::DecodeError(_))));
+    }
+    assert_eq!(doc.oplog_frontiers().encode(), before);
+    assert_eq!(doc.state_frontiers().encode(), before);
+    assert!(!doc.is_detached());
+}
+
+#[test]
+fn generated_error_lowering_preserves_existing_tags_and_new_variants() {
+    use loro_ffi::{CannotFindRelativePosition, ChangeTravelError, LoroError, UniFfiTag};
+    fn lower<E: uniffi::LowerError<UniFfiTag> + ToString>(error: E) -> (Vec<u8>, String) {
+        let message = error.to_string();
+        let bytes = E::lower_error(error).destroy_into_vec();
+        (bytes, message)
+    }
+    let cases = [
+        (
+            "LoroEncodeError",
+            "InternalError",
+            4,
+            lower(LoroEncodeError::InternalError("retained tag".into())),
+        ),
+        (
+            "LoroEncodeError",
+            "DecodeError",
+            5,
+            lower(LoroEncodeError::DecodeError("unreadable fixture".into())),
+        ),
+        (
+            "CannotFindRelativePosition",
+            "HistoryUnreadable",
+            4,
+            lower(CannotFindRelativePosition::HistoryUnreadable),
+        ),
+        (
+            "ChangeTravelError",
+            "HistoryUnreadable",
+            3,
+            lower(ChangeTravelError::HistoryUnreadable(
+                LoroError::DecodeError("unreadable fixture".into()),
+            )),
+        ),
+    ];
+    let mut records = Vec::new();
+    for (error_type, variant, tag, (bytes, message)) in cases {
+        assert_eq!(i32::from_be_bytes(bytes[..4].try_into().unwrap()), tag);
+        let mut body = &bytes[4..];
+        let decoded = <String as uniffi::Lift<UniFfiTag>>::try_read(&mut body).unwrap();
+        assert_eq!(decoded, message);
+        assert!(body.is_empty());
+        records.push(serde_json::json!({
+            "error_type": error_type, "variant": variant, "bytes": bytes, "message": message,
+        }));
+    }
+    // The native binding checks consume these actual Rust-lowered error buffers.
+    // No fixture or production injection API is added to the library.
+    if let Some(path) = std::env::var_os("LORO_FFI_ERROR_FIXTURE") {
+        std::fs::write(path, serde_json::to_vec(&records).unwrap()).unwrap();
     }
 }

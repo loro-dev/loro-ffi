@@ -49,6 +49,9 @@ def main():
     env = os.environ.copy()
     target = Path(env.get("CARGO_TARGET_DIR", work / "target")).resolve()
     env["CARGO_TARGET_DIR"] = str(target)
+    error_fixture = work / "lowered-errors.json"
+    env["LORO_FFI_ERROR_FIXTURE"] = str(error_fixture)
+    env["LORO_FFI_TEST_FIXTURES"] = str(work / "tests" / "fixtures")
 
     def run(*command, extra_env=None):
         print("+", " ".join(map(str, command)), flush=True)
@@ -59,6 +62,8 @@ def main():
             *([] if core else ["--locked"]), *arguments)
 
     cargo("test", "--all-targets", "--features", "cli")
+    if not error_fixture.is_file():
+        raise RuntimeError("Rust tests did not generate the error-lowering fixture")
     cargo("test", "--doc", "--features", "cli")
     cargo("build", "--features", "cli")
     bindings = work / "bindings"

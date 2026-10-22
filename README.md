@@ -54,8 +54,10 @@ restoring, then importing A applies both A and B. Saving pending bytes does not
 establish that a document is synced or that a sync cursor can be advanced or
 history compacted.
 
-The default dependency is pinned to the [core review commit](https://github.com/loro-dev/loro/commit/c48e4c7e7a2faa3753723b721eb3b82b09406055)
-that adds this API. The checked-in lockfile uses that exact revision, so another
+The default dependency is pinned to the [core review commit](https://github.com/loro-dev/loro/commit/ed71753b7a689eb77097b54102b8e20b92444ef6)
+that adds this API on top of current core `main`, including the published
+`loro-v1.16.2` baseline and its fixes. The checked-in lockfile uses that exact
+revision and retains `loro` and `loro-internal` version `1.16.2`, so another
 machine can build and review this change without a local core checkout. Replace
 this review dependency with a released core version containing the API before
 publishing an FFI release; coordinate that dependency update with the core change.
@@ -72,6 +74,13 @@ runs the Rust tests, generates Swift and Python bindings, and runs the Python
 recovery and error tests. On macOS with `swiftc`, it also runs the Swift recovery
 and error tests. Set `CARGO_TARGET_DIR` to reuse a build cache. The temporary copy
 and generated artifacts remain available for inspection at the printed path.
+
+The dependency update preserves the legacy JSON export and `state_vv` signatures.
+Legacy JSON exports still return the JSON schema directly and panic on unreadable
+history. Use `try_export_json_updates` or
+`try_export_json_updates_without_peer_compression` to receive a typed `LoroError`
+instead. The binding also maps the current core decode and unreadable-history
+error variants without changing the existing error tags.
 
 For development against a different core checkout, pass its workspace path as
 an optional argument. This changes the dependency only in the temporary copy and
