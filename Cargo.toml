@@ -17,7 +17,7 @@ path = "src/uniffi-bindgen.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-loro = { version = "1.16.2", features = ["counter", "jsonpath"] }
+loro = { git = "https://github.com/loro-dev/loro", rev = "c48e4c7e7a2faa3753723b721eb3b82b09406055", features = ["counter", "jsonpath"] }
 serde_json = { version = "1" }
 uniffi = { version = "0.31.1" }
 

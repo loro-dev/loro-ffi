@@ -362,14 +362,16 @@ impl LoroDoc {
         self.doc.is_detached()
     }
 
-    /// Import updates/snapshot exported by [`LoroDoc::export_snapshot`] or [`LoroDoc::export_from`].
+    /// Import a snapshot, ordinary updates, or bytes from [`LoroDoc::export_pending_updates`].
+    /// Pending updates still wait for their actual missing causal dependencies.
     #[inline]
     pub fn import(&self, bytes: &[u8]) -> Result<ImportStatus, LoroError> {
         let status = self.doc.import_with(bytes, "")?;
         Ok(status.into())
     }
 
-    /// Import updates/snapshot exported by [`LoroDoc::export_snapshot`] or [`LoroDoc::export_from`].
+    /// Import a snapshot, ordinary updates, or bytes from [`LoroDoc::export_pending_updates`].
+    /// Pending updates still wait for their actual missing causal dependencies.
     ///
     /// It marks the import with a custom `origin` string. It can be used to track the import source
     /// in the generated events.
@@ -445,7 +447,9 @@ impl LoroDoc {
             .collect()
     }
 
-    /// Export all the ops not included in the given `VersionVector`
+    /// Export all applied ops not included in the given `VersionVector`.
+    /// Remote updates waiting for missing dependencies are excluded; save them
+    /// separately with [`LoroDoc::export_pending_updates`].
     #[inline]
     pub fn export_updates(&self, vv: &VersionVector) -> Result<Vec<u8>, LoroEncodeError> {
         self.doc.export(loro::ExportMode::Updates {
@@ -453,7 +457,37 @@ impl LoroDoc {
         })
     }
 
+    /// Export imported remote updates waiting for missing causal dependencies.
+    ///
+    /// These are received remote operations, not uncommitted local transactions.
+    /// Returns `Ok(None)` when none remain pending, or `Ok(Some(bytes))` in the
+    /// ordinary updates format. `None` maps to native nil/None, not empty bytes.
+    /// The bytes preserve the pending operations, not necessarily the original blob.
+    ///
+    /// This is read-only: it does not consume pending updates, commit local edits,
+    /// emit events, or advance the applied version vector/frontiers. Ordinary
+    /// snapshot/update exports exclude these updates; snapshot export still
+    /// commits local edits as usual.
+    ///
+    /// Prevent mutations/imports between exporting a snapshot and these bytes:
+    /// the calls are not an atomic pair. Save or replace both as one consistent
+    /// checkpoint, only after both exports succeed. `None` must clear any older
+    /// pending record; an export error must not replace the previous checkpoint.
+    /// Encoding failures, including [`LoroEncodeError::InternalError`], are
+    /// returned as errors with the core's message, not as absent bytes.
+    ///
+    /// Restore the snapshot first, then pass any pending bytes to [`LoroDoc::import`].
+    /// They remain pending until the real missing dependencies arrive. This API
+    /// does not fetch or invent those dependencies, establish that the document
+    /// is synced, or make advancing a transport cursor or compaction safe.
+    #[inline]
+    pub fn export_pending_updates(&self) -> Result<Option<Vec<u8>>, LoroEncodeError> {
+        self.doc.export_pending_updates()
+    }
+
     /// Export the current state and history of the document.
+    /// Remote updates waiting for missing dependencies are excluded; save them
+    /// separately with [`LoroDoc::export_pending_updates`]. This export commits local edits.
     #[inline]
     pub fn export_snapshot(&self) -> Result<Vec<u8>, LoroEncodeError> {
         self.doc.export(loro::ExportMode::Snapshot)
