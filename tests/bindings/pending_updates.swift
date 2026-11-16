@@ -231,7 +231,7 @@ private struct LoweredError: Decodable {
 private func generatedErrorLifting() throws {
     let path = ProcessInfo.processInfo.environment["LORO_FFI_ERROR_FIXTURE"]!
     let records = try JSONDecoder().decode([LoweredError].self, from: Data(contentsOf: URL(fileURLWithPath: path)))
-    expect(records.count == 4, "Rust must produce each error-lowering fixture")
+    expect(records.count == 6, "Rust must produce each error-lowering fixture")
     for record in records {
         // Read bytes from actual Rust LowerError output through the generated Swift converter.
         var buffer = (data: Data(record.bytes), offset: Data.Index(0))
@@ -248,11 +248,37 @@ private func generatedErrorLifting() throws {
         case ("ChangeTravelError", "HistoryUnreadable"):
             let error = try FfiConverterTypeChangeTravelError.read(from: &buffer)
             expect(error == .HistoryUnreadable(message: record.message), "new travel error must remain typed")
+        case ("UpdateTimeoutError", "Timeout"):
+            let error = try FfiConverterTypeUpdateTimeoutError.read(from: &buffer)
+            expect(error == .Timeout(message: record.message), "existing timeout tag must remain stable")
+        case ("UpdateTimeoutError", "Loro"):
+            let error = try FfiConverterTypeUpdateTimeoutError.read(from: &buffer)
+            expect(error == .Loro(message: record.message), "text update errors must remain typed")
         default:
             preconditionFailure("unexpected Rust-lowered fixture")
         }
         expect(buffer.offset == buffer.data.count, "converter must consume the complete error buffer")
     }
+}
+
+private func deletedTextUpdateError() throws {
+    let doc = LoroDoc()
+    let root = doc.getMap(id: textRoot)
+    let child = try root.insertTextContainer(key: "child", child: LoroText())
+    doc.commit()
+    try root.delete(key: "child")
+    doc.commit()
+    let options = UpdateOptions(timeoutMs: nil, useRefinedDiff: false)
+    for update in [child.update, child.updateByLine] {
+        do {
+            try update("new text", options)
+            preconditionFailure("deleted text update must throw")
+        } catch UpdateTimeoutError.Loro(let message) {
+            expect(!message.isEmpty, "core text error must preserve its message")
+        }
+    }
+    let pending = try doc.exportPendingUpdates()
+    expect(pending == nil, "document must remain readable after rejected text update")
 }
 
 @main
@@ -266,6 +292,7 @@ private enum PendingUpdatesBindingTests {
         try jsonExportCompatibility()
         try unreadableHistoryErrors()
         try generatedErrorLifting()
+        try deletedTextUpdateError()
         print("Swift pending updates binding tests passed")
     }
 }

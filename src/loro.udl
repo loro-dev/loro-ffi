@@ -2232,5 +2232,6 @@ enum ChangeTravelError{
 
 [Error, Remote]
 enum UpdateTimeoutError{
-    "Timeout"
+    "Timeout",
+    "Loro"
 };
