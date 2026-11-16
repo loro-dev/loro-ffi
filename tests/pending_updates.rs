@@ -366,12 +366,27 @@ fn unreadable_history_returns_typed_export_errors_without_advancing() {
 
 #[test]
 fn generated_error_lowering_preserves_existing_tags_and_new_variants() {
-    use loro_ffi::{CannotFindRelativePosition, ChangeTravelError, LoroError, UniFfiTag};
+    use loro_ffi::{
+        CannotFindRelativePosition, ChangeTravelError, LoroError, UniFfiTag, UpdateTimeoutError,
+    };
     fn lower<E: uniffi::LowerError<UniFfiTag> + ToString>(error: E) -> (Vec<u8>, String) {
         let message = error.to_string();
         let bytes = E::lower_error(error).destroy_into_vec();
         (bytes, message)
     }
+    let doc = LoroDoc::new();
+    let root = doc.get_map(Arc::new("root".to_owned()));
+    let child = root
+        .insert_text_container("child", Arc::new(LoroText::new()))
+        .unwrap();
+    doc.commit();
+    root.delete("child").unwrap();
+    doc.commit();
+    let deleted_error = child.update("new text", Default::default()).unwrap_err();
+    assert!(matches!(
+        &deleted_error,
+        UpdateTimeoutError::Loro(LoroError::ContainerDeleted { .. })
+    ));
     let cases = [
         (
             "LoroEncodeError",
@@ -399,6 +414,13 @@ fn generated_error_lowering_preserves_existing_tags_and_new_variants() {
                 LoroError::DecodeError("unreadable fixture".into()),
             )),
         ),
+        (
+            "UpdateTimeoutError",
+            "Timeout",
+            1,
+            lower(UpdateTimeoutError::Timeout),
+        ),
+        ("UpdateTimeoutError", "Loro", 2, lower(deleted_error)),
     ];
     let mut records = Vec::new();
     for (error_type, variant, tag, (bytes, message)) in cases {

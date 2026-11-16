@@ -64,6 +64,20 @@ def dependent_updates(base):
 
 
 class PendingUpdatesBindingTests(unittest.TestCase):
+    def test_deleted_text_update_returns_typed_core_error(self):
+        doc = loro.LoroDoc()
+        root = doc.get_map(TEXT)
+        child = root.insert_text_container("child", loro.LoroText())
+        doc.commit()
+        root.delete("child")
+        doc.commit()
+        options = loro.UpdateOptions(timeout_ms=None, use_refined_diff=False)
+        for update in (child.update, child.update_by_line):
+            with self.assertRaises(loro.UpdateTimeoutError.Loro) as caught:
+                update("new text", options)
+            self.assertTrue(str(caught.exception))
+        self.assertIsNone(doc.export_pending_updates())
+
     def test_optional_bytes_is_none_for_empty(self):
         self.assertEqual(
             typing.get_type_hints(loro.LoroDoc.export_pending_updates)["return"],
@@ -235,8 +249,9 @@ class PendingUpdatesBindingTests(unittest.TestCase):
         # These buffers were produced by the actual generated Rust LowerError
         # implementations, not by constructing a matching foreign error object.
         records = json.loads(Path(os.environ["LORO_FFI_ERROR_FIXTURE"]).read_text())
-        self.assertEqual(len(records), 4)
+        self.assertEqual(len(records), 6)
         converters = {
+            "UpdateTimeoutError": loro._UniffiFfiConverterTypeUpdateTimeoutError,
             "LoroEncodeError": loro._UniffiFfiConverterTypeLoroEncodeError,
             "CannotFindRelativePosition": loro._UniffiFfiConverterTypeCannotFindRelativePosition,
             "ChangeTravelError": loro._UniffiFfiConverterTypeChangeTravelError,

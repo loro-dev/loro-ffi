@@ -1,5 +1,10 @@
 # Change Log
 
+## v1.18.0
+
+- use published Loro core 1.18.0 and its import, undo, correctness and performance fixes
+- add the new text update `UpdateTimeoutError::Loro` variant without changing the existing timeout tag; validate actual Rust errors through generated Swift/Python converters
+
 ## v1.17.1
 
 - add `LoroDoc::export_pending_updates` as a thin wrapper around the core method,
