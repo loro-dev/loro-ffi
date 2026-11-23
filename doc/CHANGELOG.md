@@ -1,5 +1,10 @@
 # Change Log
 
+## v1.19.0
+
+- use published Loro core 1.19.0 for the current core correctness, performance and memory improvements
+- preserve existing UniFFI APIs and error tags; validate generated Swift/Python recovery and error handling against the new core
+
 ## v1.18.0
 
 - use published Loro core 1.18.0 and its import, undo, correctness and performance fixes

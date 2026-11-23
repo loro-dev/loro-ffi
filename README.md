@@ -20,6 +20,10 @@ JSONPath tooling now includes `subscribe_jsonpath`, a lightweight notification h
 - [loro-cs](https://github.com/sensslen/loro-cs): **C#** Binding for Loro (community)
 - [loro-go](https://github.com/aholstenson/loro-go): **Go** Binding for Loro (community)
 
+## 1.19.0
+
+Uses the published Loro core 1.19.0. Keeps the existing UniFFI APIs and error tags.
+
 ## 1.18.0
 
 Uses Loro core 1.18.0. Text `update` and `update_by_line` errors now include
@@ -61,7 +65,7 @@ restoring, then importing A applies both A and B. Saving pending bytes does not
 establish that a document is synced or that a sync cursor can be advanced or
 history compacted.
 
-The default dependency uses the published [Loro 1.18.0 crate](https://crates.io/crates/loro/1.18.0),
+The default dependency uses the published [Loro 1.19.0 crate](https://crates.io/crates/loro/1.19.0),
 which includes this API and the previously published `loro-v1.16.2` fixes. The
 checked-in lockfile resolves the registry release, so validation needs no local
 core checkout or unpublished Git revision. The FFI package and generated language packages are versioned and published
