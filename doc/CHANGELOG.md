@@ -1,5 +1,11 @@
 # Change Log
 
+## v1.19.1
+
+- upgrade to Loro core 1.19.1 for memory-reclamation anti-thrashing and incremental KV flushes
+- retain the existing UniFFI API and error tags; validate generated Python and Swift bindings against the candidate core
+- use locked registry dependencies on Loro 1.19.1, loro-internal 1.19.2 and loro-kv-store 1.19.1
+
 ## v1.19.0
 
 - use published Loro core 1.19.0 for the current core correctness, performance and memory improvements
